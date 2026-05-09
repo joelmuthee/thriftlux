@@ -152,6 +152,18 @@ Don't say "GHL". Say **"Every customer who buys gets saved to your contacts list
 
 ---
 
+## WhatsApp icon on Enquire buttons
+
+Every "Enquire" button on the public site ships with the official WhatsApp glyph beside the text. This is **not optional** — it's the single biggest reason mobile users tap the button. Kenyans recognise the WhatsApp logo before they read the word.
+
+- **Where it lives:** inline SVG inside the button render in `main.js` (search for `wa-icon`). The SVG uses `fill="currentColor"` so it inherits the button colour automatically (dark default, gold on hover).
+- **Spacing:** controlled by `.btn-card .wa-icon` in `styles.css` — `vertical-align: -3px; margin-right: 6px;`.
+- **Sold-out state:** no icon, just the text "Sold out". Don't add the icon to disabled buttons — defeats the visual cue that the button isn't actionable.
+
+If a future client wants a different chat platform (Telegram, Messenger, etc.) you'd swap the SVG path data + the `whatsappLink()` function in `main.js`. But default ships with WhatsApp because that's what 99% of Nairobi small businesses use.
+
+---
+
 ## What this workflow does NOT cover
 
 - **Designing custom layouts per client** — every client gets the ThriftLux template. Customisation is logo, colour, copy.

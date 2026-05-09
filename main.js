@@ -1,5 +1,5 @@
 // ThriftLux frontend gallery
-const IMG_VERSION = 'v4'; // bump this whenever you re-crop/replace bag images
+const IMG_VERSION = 'v5'; // bump this whenever you re-crop/replace bag images
 const API_BASE = 'https://thriftlux-api.stawisystems.workers.dev';
 (async function() {
   const gallery = document.getElementById('gallery');

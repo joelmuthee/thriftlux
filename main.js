@@ -1,5 +1,6 @@
 // ThriftLux frontend gallery
 const IMG_VERSION = 'v4'; // bump this whenever you re-crop/replace bag images
+const API_BASE = 'https://thriftlux-api.stawisystems.workers.dev';
 (async function() {
   const gallery = document.getElementById('gallery');
   const filterMeta = document.getElementById('filterMeta');
@@ -7,25 +8,20 @@ const IMG_VERSION = 'v4'; // bump this whenever you re-crop/replace bag images
   let settings = {};
   let currentFilter = 'all';
 
-  // Load data: prefer localStorage (admin edits) else data.json
   async function loadData() {
-    const local = localStorage.getItem('thriftlux_data');
-    if (local) {
-      try {
-        const parsed = JSON.parse(local);
-        bags = parsed.bags || [];
-        settings = parsed.settings || {};
-        return;
-      } catch(e) { console.warn('localStorage parse failed', e); }
-    }
     try {
-      const res = await fetch('data.json');
+      const res = await fetch(`${API_BASE}/api/bags?_=${Date.now()}`);
       const json = await res.json();
       bags = json.bags || [];
       settings = json.settings || {};
     } catch(e) {
-      console.error('Failed to load data.json', e);
-      bags = [];
+      console.error('Failed to load bags from API, falling back to data.json', e);
+      try {
+        const res = await fetch('data.json');
+        const json = await res.json();
+        bags = json.bags || [];
+        settings = json.settings || {};
+      } catch(e2) { bags = []; }
     }
   }
 

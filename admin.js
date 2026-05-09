@@ -1,8 +1,7 @@
 // ThriftLux Admin
 const ADMIN_PASSWORD = 'thriftlux2026';
-const GITHUB_REPO = 'joelmuthee/thriftlux';
-const GITHUB_BRANCH = 'main';
-const GITHUB_TOKEN = atob('Z2l0aHViX3BhdF8xMUI0Q1JGNkEwZ2FHOHBBTHpYbW93X1ZoQTNPS05DQkRLMVk5bXFHV3d5cUE1dUNzNXJrQjlqTWtSNG1WS05qcUdZVUhMS1RJUndtaFk1WTBn');
+const API_BASE = 'https://thriftlux-api.stawisystems.workers.dev';
+const ADMIN_TOKEN = atob('TGRCVjlCUEJzNTBrWXBzQjdNWUs1eDlUR1ZNNlh3bE5VUEMzTVRzN3BpUQ==');
 
 let bags = [];
 let settings = {};
@@ -40,75 +39,38 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   location.reload();
 });
 
-
-// ====== GITHUB API ======
-async function githubGet(path) {
-  const res = await fetch(
-    `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`,
-    { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } }
-  );
-  if (!res.ok) throw new Error(`GitHub GET failed: ${res.status}`);
-  return res.json();
-}
-
-async function githubPut(path, contentBase64, message, sha) {
-  const body = { message, content: contentBase64, branch: GITHUB_BRANCH };
-  if (sha) body.sha = sha;
-  const res = await fetch(
-    `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`,
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/vnd.github+json'
-      },
-      body: JSON.stringify(body)
-    }
-  );
+// ====== API ======
+async function apiUploadImage(base64, ext) {
+  const res = await fetch(`${API_BASE}/api/image`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ADMIN_TOKEN}` },
+    body: JSON.stringify({ base64, ext }),
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `GitHub PUT failed: ${res.status}`);
+    throw new Error(err.error || `Upload failed: ${res.status}`);
   }
-  return res.json();
+  const data = await res.json();
+  return `${API_BASE}${data.path}`;
 }
 
-async function uploadImageToGitHub(base64, ext) {
-  const filename = `images/bags/bag_${Date.now()}.${ext}`;
-  let sha;
-  try { sha = (await githubGet(filename)).sha; } catch(e) {}
-  await githubPut(filename, base64, `Add bag image`, sha);
-  return filename;
+async function apiPublish() {
+  const res = await fetch(`${API_BASE}/api/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ADMIN_TOKEN}` },
+    body: JSON.stringify({ bags, settings }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Save failed: ${res.status}`);
+  }
 }
 
-async function publishData(message = 'Update bag data') {
-  const content = JSON.stringify({ bags, settings }, null, 2);
-  // btoa requires latin1 — use encodeURIComponent + unescape for unicode safety
-  const contentBase64 = btoa(unescape(encodeURIComponent(content)));
-  let sha;
-  try { sha = (await githubGet('data.json')).sha; } catch(e) {}
-  await githubPut('data.json', contentBase64, message, sha);
-}
-
-// ====== DATA ======
 async function loadData() {
-  try {
-    const res = await fetch(
-      `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/data.json?_=${Date.now()}`
-    );
-    if (!res.ok) throw new Error('fetch failed');
-    const json = await res.json();
-    bags = json.bags || [];
-    settings = json.settings || {};
-    return;
-  } catch(e) {}
-  // Local fallback
-  try {
-    const res = await fetch(`data.json?_=${Date.now()}`);
-    const json = await res.json();
-    bags = json.bags || [];
-    settings = json.settings || {};
-  } catch(e) {}
+  const res = await fetch(`${API_BASE}/api/bags?_=${Date.now()}`);
+  const json = await res.json();
+  bags = json.bags || [];
+  settings = json.settings || {};
 }
 
 // ====== TOAST ======
@@ -207,7 +169,7 @@ async function saveBag() {
 
     if (stagedImage) {
       showToast('Uploading image…');
-      imagePath = await uploadImageToGitHub(stagedImage.base64, stagedImage.ext);
+      imagePath = await apiUploadImage(stagedImage.base64, stagedImage.ext);
     }
 
     if (editingId) {
@@ -219,13 +181,13 @@ async function saveBag() {
       bag.reel = reel;
       bag.sold = sold;
       if (imagePath) bag.image = imagePath;
-      await publishData('Update bag: ' + name);
+      await apiPublish();
       showToast('Bag updated and live!');
     } else {
       if (!stagedImage) { showToast('Add a bag image.'); setSaving(false); return; }
       const id = 'bag_' + Date.now();
       bags.unshift({ id, name, description: desc, price, reel, sold, image: imagePath });
-      await publishData('Add bag: ' + name);
+      await apiPublish();
       showToast('Bag added and live!');
     }
 
@@ -275,7 +237,7 @@ async function deleteBag(id) {
   if (!confirm('Delete this bag? This cannot be undone.')) return;
   bags = bags.filter(b => b.id !== id);
   try {
-    await publishData('Delete bag');
+    await apiPublish();
     renderList();
     showToast('Bag deleted and live.');
   } catch(err) {
@@ -288,11 +250,11 @@ async function toggleSold(id) {
   if (!bag) return;
   bag.sold = !bag.sold;
   try {
-    await publishData(bag.sold ? 'Mark sold: ' + bag.name : 'Unmark sold: ' + bag.name);
+    await apiPublish();
     renderList();
     showToast(bag.sold ? 'Marked as SOLD.' : 'Marked as available.');
   } catch(err) {
-    bag.sold = !bag.sold; // revert
+    bag.sold = !bag.sold;
     showToast('Sync failed: ' + err.message);
   }
 }
@@ -321,7 +283,6 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// expose to onclick handlers
 window.editBag = editBag;
 window.deleteBag = deleteBag;
 window.toggleSold = toggleSold;

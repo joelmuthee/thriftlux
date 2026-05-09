@@ -1,4 +1,5 @@
 // ThriftLux frontend gallery
+const IMG_VERSION = 'v2'; // bump this whenever you re-crop/replace bag images
 (async function() {
   const gallery = document.getElementById('gallery');
   const filterMeta = document.getElementById('filterMeta');
@@ -51,7 +52,7 @@
     gallery.innerHTML = filtered.map(bag => `
       <article class="card ${bag.sold ? 'sold' : ''}">
         <div class="card-img-wrap" data-action="zoom" data-id="${bag.id}">
-          <img class="card-img" src="${bag.image}" alt="${escapeHtml(bag.name)}" loading="lazy">
+          <img class="card-img" src="${bag.image}?${IMG_VERSION}" alt="${escapeHtml(bag.name)}" loading="lazy">
           ${bag.sold ? '<span class="badge-sold">Sold</span>' : ''}
         </div>
         <div class="card-body">
@@ -97,7 +98,7 @@
     const id = wrap.dataset.id;
     const bag = bags.find(b => b.id === id);
     if (!bag) return;
-    lightboxImg.src = bag.image;
+    lightboxImg.src = bag.image + '?' + IMG_VERSION;
     lightboxImg.alt = bag.name;
     lightboxCap.textContent = `${bag.name} · ${fmtPrice(bag.price)}${bag.sold ? ' · SOLD' : ''}`;
     lightbox.classList.add('open');

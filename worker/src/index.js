@@ -73,6 +73,43 @@ export default {
       return json({ ok: true, time: new Date().toISOString() });
     }
 
+    // Buyer capture → forward to GHL form submit (server-side, no CORS or captcha popup)
+    if (request.method === "POST" && path === "/api/buyer") {
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
+      const { name, phone, notes, bag_name, bag_price, captchaV3 } = body;
+      if (!name && !phone) return json({ error: "name or phone required" }, 400);
+      const fd = new FormData();
+      fd.append("formData", JSON.stringify({
+        first_name: name || "",
+        phone: phone || "",
+        multi_line_280v: [notes, bag_name && `Bag: ${bag_name} (Ksh ${bag_price})`].filter(Boolean).join(" | "),
+      }));
+      fd.append("locationId", "aTZHRdo8ius6WBzGQ5GD");
+      fd.append("formId", "BWrG36c6p56ATDThPdN7");
+      fd.append("eventData", JSON.stringify({
+        source: "thriftlux-admin",
+        type: "page-visit",
+        domain: "thriftlux-ke.pages.dev",
+      }));
+      if (captchaV3) fd.append("captchaV3", captchaV3);
+      try {
+        const r = await fetch("https://backend.leadconnectorhq.com/forms/submit", {
+          method: "POST",
+          headers: {
+            "Origin": "https://link.essenceautomations.com",
+            "Referer": "https://link.essenceautomations.com/widget/form/BWrG36c6p56ATDThPdN7",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          },
+          body: fd,
+        });
+        const text = await r.text().catch(() => "");
+        return json({ ok: r.ok, status: r.status, body: text.slice(0, 500) });
+      } catch (err) {
+        return json({ ok: false, error: err.message }, 502);
+      }
+    }
+
     // --- Admin ---
     if (request.method === "POST" && path === "/api/bulk") {
       if (!isAuthed(request, env)) return json({ error: "unauthorized" }, 401);

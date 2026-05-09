@@ -269,11 +269,8 @@ async function toggleSold(id) {
 }
 
 // ====== BUYER CAPTURE MODAL ======
-// Submits straight to the public GHL form endpoint — no paid Inbound Webhook needed.
-// Form: ThriftLux - Buyer Capture (BWrG36c6p56ATDThPdN7)
-const GHL_FORM_ID = 'BWrG36c6p56ATDThPdN7';
-const GHL_LOCATION_ID = 'aTZHRdo8ius6WBzGQ5GD';
-const GHL_SUBMIT_URL = 'https://backend.leadconnectorhq.com/forms/submit';
+// Buyer details get forwarded to GHL through the Worker (/api/buyer) which
+// proxies to the public GHL form endpoint — bypasses CORS + browser reCAPTCHA.
 
 const buyerModal = document.getElementById('buyerModal');
 const buyerName = document.getElementById('buyerName');
@@ -329,25 +326,37 @@ async function commitSold(withBuyer) {
   }
 }
 
+const GHL_RECAPTCHA_KEY = '6LeDBFwpAAAAAJe8ux9-imrqZ2ueRsEtdiWoDDpX';
+
+async function getCaptchaToken() {
+  if (!window.grecaptcha?.enterprise) return '';
+  return new Promise(resolve => {
+    grecaptcha.enterprise.ready(async () => {
+      try {
+        const token = await grecaptcha.enterprise.execute(GHL_RECAPTCHA_KEY, { action: 'submit' });
+        resolve(token);
+      } catch(e) { resolve(''); }
+    });
+  });
+}
+
 async function sendBuyerToGHL(bag) {
   try {
-    const fd = new FormData();
-    fd.append('formData', JSON.stringify({
-      first_name: bag.soldTo.name,
-      phone: bag.soldTo.phone,
-      multi_line_280v: [
-        bag.soldTo.notes,
-        `Bag: ${bag.name} (Ksh ${bag.price})`,
-      ].filter(Boolean).join(' | '),
-    }));
-    fd.append('locationId', GHL_LOCATION_ID);
-    fd.append('formId', GHL_FORM_ID);
-    fd.append('eventData', JSON.stringify({
-      source: 'thriftlux-admin',
-      type: 'page-visit',
-      domain: location.hostname,
-    }));
-    await fetch(GHL_SUBMIT_URL, { method: 'POST', body: fd });
+    const captchaV3 = await getCaptchaToken();
+    const r = await fetch(`${API_BASE}/api/buyer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: bag.soldTo.name,
+        phone: bag.soldTo.phone,
+        notes: bag.soldTo.notes,
+        bag_name: bag.name,
+        bag_price: bag.price,
+        captchaV3,
+      }),
+    });
+    const result = await r.json().catch(() => ({}));
+    console.log('GHL submit:', result);
   } catch(err) {
     console.warn('GHL submit failed (non-blocking):', err);
   }

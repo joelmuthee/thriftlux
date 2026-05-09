@@ -269,7 +269,11 @@ async function toggleSold(id) {
 }
 
 // ====== BUYER CAPTURE MODAL ======
-const GHL_WEBHOOK_URL = ''; // paste GHL Inbound Webhook URL here once created
+// Submits straight to the public GHL form endpoint — no paid Inbound Webhook needed.
+// Form: ThriftLux - Buyer Capture (BWrG36c6p56ATDThPdN7)
+const GHL_FORM_ID = 'BWrG36c6p56ATDThPdN7';
+const GHL_LOCATION_ID = 'aTZHRdo8ius6WBzGQ5GD';
+const GHL_SUBMIT_URL = 'https://backend.leadconnectorhq.com/forms/submit';
 
 const buyerModal = document.getElementById('buyerModal');
 const buyerName = document.getElementById('buyerName');
@@ -326,24 +330,26 @@ async function commitSold(withBuyer) {
 }
 
 async function sendBuyerToGHL(bag) {
-  if (!GHL_WEBHOOK_URL) return; // not configured yet
   try {
-    await fetch(GHL_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: bag.soldTo.name,
-        phone: bag.soldTo.phone,
-        notes: bag.soldTo.notes,
-        bag_name: bag.name,
-        bag_price: bag.price,
-        bag_image: bag.image,
-        sold_at: bag.soldTo.soldAt,
-        source: 'ThriftLux Admin',
-      }),
-    });
+    const fd = new FormData();
+    fd.append('formData', JSON.stringify({
+      first_name: bag.soldTo.name,
+      phone: bag.soldTo.phone,
+      multi_line_280v: [
+        bag.soldTo.notes,
+        `Bag: ${bag.name} (Ksh ${bag.price})`,
+      ].filter(Boolean).join(' | '),
+    }));
+    fd.append('locationId', GHL_LOCATION_ID);
+    fd.append('formId', GHL_FORM_ID);
+    fd.append('eventData', JSON.stringify({
+      source: 'thriftlux-admin',
+      type: 'page-visit',
+      domain: location.hostname,
+    }));
+    await fetch(GHL_SUBMIT_URL, { method: 'POST', body: fd });
   } catch(err) {
-    console.warn('GHL webhook failed (non-blocking):', err);
+    console.warn('GHL submit failed (non-blocking):', err);
   }
 }
 

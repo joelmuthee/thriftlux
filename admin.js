@@ -248,27 +248,125 @@ async function deleteBag(id) {
 async function toggleSold(id) {
   const bag = bags.find(b => b.id === id);
   if (!bag) return;
-  bag.sold = !bag.sold;
+
+  // Unmarking sold — no buyer prompt
+  if (bag.sold) {
+    bag.sold = false;
+    delete bag.soldTo;
+    try {
+      await apiPublish();
+      renderList();
+      showToast('Marked as available.');
+    } catch(err) {
+      bag.sold = true;
+      showToast('Sync failed: ' + err.message);
+    }
+    return;
+  }
+
+  // Marking sold — open buyer capture modal
+  openBuyerModal(bag);
+}
+
+// ====== BUYER CAPTURE MODAL ======
+const GHL_WEBHOOK_URL = ''; // paste GHL Inbound Webhook URL here once created
+
+const buyerModal = document.getElementById('buyerModal');
+const buyerName = document.getElementById('buyerName');
+const buyerPhone = document.getElementById('buyerPhone');
+const buyerNotes = document.getElementById('buyerNotes');
+let pendingBag = null;
+
+function openBuyerModal(bag) {
+  pendingBag = bag;
+  buyerName.value = '';
+  buyerPhone.value = '';
+  buyerNotes.value = '';
+  document.getElementById('buyerModalTitle').textContent = `Mark as sold: ${bag.name}`;
+  buyerModal.style.display = 'flex';
+  buyerName.focus();
+}
+
+function closeBuyerModal() {
+  buyerModal.style.display = 'none';
+  pendingBag = null;
+}
+
+async function commitSold(withBuyer) {
+  if (!pendingBag) return;
+  const bag = pendingBag;
+  bag.sold = true;
+  if (withBuyer) {
+    const name = buyerName.value.trim();
+    const phone = buyerPhone.value.trim().replace(/[^0-9+]/g, '');
+    const notes = buyerNotes.value.trim();
+    if (!name && !phone) {
+      showToast('Add a name or phone, or hit Skip.');
+      return;
+    }
+    bag.soldTo = {
+      name,
+      phone,
+      notes,
+      soldAt: new Date().toISOString(),
+    };
+  }
+
+  closeBuyerModal();
   try {
     await apiPublish();
     renderList();
-    showToast(bag.sold ? 'Marked as SOLD.' : 'Marked as available.');
+    showToast(withBuyer ? 'SOLD. Buyer saved.' : 'Marked as SOLD.');
+    if (withBuyer) sendBuyerToGHL(bag);
   } catch(err) {
-    bag.sold = !bag.sold;
+    bag.sold = false;
+    delete bag.soldTo;
     showToast('Sync failed: ' + err.message);
   }
 }
+
+async function sendBuyerToGHL(bag) {
+  if (!GHL_WEBHOOK_URL) return; // not configured yet
+  try {
+    await fetch(GHL_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: bag.soldTo.name,
+        phone: bag.soldTo.phone,
+        notes: bag.soldTo.notes,
+        bag_name: bag.name,
+        bag_price: bag.price,
+        bag_image: bag.image,
+        sold_at: bag.soldTo.soldAt,
+        source: 'ThriftLux Admin',
+      }),
+    });
+  } catch(err) {
+    console.warn('GHL webhook failed (non-blocking):', err);
+  }
+}
+
+document.getElementById('buyerSaveBtn').addEventListener('click', () => commitSold(true));
+document.getElementById('buyerSkipBtn').addEventListener('click', () => commitSold(false));
+document.getElementById('buyerCancelBtn').addEventListener('click', closeBuyerModal);
+buyerModal.addEventListener('click', e => { if (e.target === buyerModal) closeBuyerModal(); });
 
 // ====== LIST ======
 function renderList() {
   const list = document.getElementById('adminList');
   document.getElementById('bagCount').textContent = bags.length;
-  list.innerHTML = bags.map(b => `
+  list.innerHTML = bags.map(b => {
+    const buyer = b.soldTo
+      ? `<div style="font-size:12px;color:#666;margin-top:4px;">Sold to ${escapeHtml(b.soldTo.name || 'unknown')}${b.soldTo.phone ? ' · ' + escapeHtml(b.soldTo.phone) : ''}</div>`
+      : '';
+    return `
     <div class="admin-card">
       <img src="${b.image}" alt="${escapeHtml(b.name)}">
       <div class="admin-card-body">
         <div class="admin-card-name">${escapeHtml(b.name)}</div>
         <div class="admin-card-price">Ksh ${Number(b.price).toLocaleString('en-KE')} ${b.sold ? '· <span style="color:#b00020">SOLD</span>' : ''}</div>
+        ${buyer}
         <div class="admin-card-actions">
           <button onclick="editBag('${b.id}')">Edit</button>
           <button class="sold-toggle ${b.sold ? 'on' : ''}" onclick="toggleSold('${b.id}')">${b.sold ? 'Unmark sold' : 'Mark sold'}</button>
@@ -276,7 +374,7 @@ function renderList() {
         </div>
       </div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 function escapeHtml(s) {

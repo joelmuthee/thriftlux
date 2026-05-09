@@ -87,6 +87,33 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="admin.js?v=3"></script>
+<!-- BUYER CAPTURE MODAL -->
+<div id="buyerModal" class="modal" style="display:none;">
+  <div class="modal-card">
+    <h3 id="buyerModalTitle">Mark as sold</h3>
+    <p style="color:#666;font-size:14px;margin-bottom:16px;">Save the buyer's details for future remarketing (optional).</p>
+
+    <div class="field">
+      <label>Buyer's name</label>
+      <input id="buyerName" type="text" placeholder="e.g. Jane Wanjiru">
+    </div>
+    <div class="field">
+      <label>Phone (with country code)</label>
+      <input id="buyerPhone" type="tel" placeholder="e.g. 254712345678">
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <input id="buyerNotes" type="text" placeholder="Drop-off location, payment method...">
+    </div>
+
+    <div class="admin-actions" style="margin-top:18px;">
+      <button class="btn-admin primary" id="buyerSaveBtn">Save &amp; mark sold</button>
+      <button class="btn-admin" id="buyerSkipBtn">Skip — just mark sold</button>
+      <button class="btn-admin danger" id="buyerCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js?v=4"></script>
 </body>
 </html>

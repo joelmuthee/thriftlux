@@ -1,5 +1,5 @@
 // ThriftLux frontend gallery
-const IMG_VERSION = 'v2'; // bump this whenever you re-crop/replace bag images
+const IMG_VERSION = 'v3'; // bump this whenever you re-crop/replace bag images
 (async function() {
   const gallery = document.getElementById('gallery');
   const filterMeta = document.getElementById('filterMeta');

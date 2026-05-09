@@ -200,7 +200,23 @@ MANUAL_OVERRIDE = {
 ```
 where `y_center_pct` is the bag's actual vertical position in the original (0–1) and `x_center_pct` is the horizontal position. Then rerun the crop + verify loop.
 
-### Step 9 — Bump cache-bust + commit
+### Step 9 — Add breathing room (margins) around the bag
+
+After centring, the bag fills the 560×700 frame edge-to-edge. The store owner has flagged this — bags need visual margin so they don't look cramped against the card edges.
+
+Run `.tmp/add_margins.py` (creates if missing — see "Margin Recipe" below). It:
+1. Sources from `images/bags/` (the freshly cropped images)
+2. Shrinks the bag to **78%** of canvas (so ~11% white margin on each side)
+3. Pastes onto a pure white `(255,255,255)` canvas of the same dimensions
+4. Saves back over the original at `quality=88`
+
+White matches the card background (`--bg-card: #ffffff`) so the padding blends seamlessly — the bag appears to "float" inside the card.
+
+**Do NOT use sampled-edge background colour.** Earlier attempts sampled corner/edge pixels to match the bag photo's bg, but hands, table edges, dark walls, etc. all polluted the sample and produced ugly mismatched borders (e.g. brownish frames around blue bags). White is the only reliable choice.
+
+After running, verify with the same screenshot loop as Step 8 — every bag should now have visible breathing room on all four sides.
+
+### Step 10 — Bump cache-bust + commit
 
 In `main.js`, increment `IMG_VERSION` (`v2` → `v3` etc.) so any cached old image gets force-reloaded. Then:
 
@@ -210,7 +226,7 @@ git commit -m "Import N new bags from Instagram"
 git push origin main
 ```
 
-### Step 10 — Update the checkpoint
+### Step 11 — Update the checkpoint
 
 Edit the **Checkpoint** table at the top of this file:
 - Set "Most recent reel imported" to `window.__reelData[0].shortcode` (the newest one downloaded)
@@ -236,6 +252,34 @@ The cropper always reads from `.tmp/bags_original/`, so re-running is non-destru
 
 ---
 
+## Margin Recipe (`add_margins.py`)
+
+Runs AFTER cropping. Adds white padding around each bag so it has breathing room inside the card.
+
+```python
+from pathlib import Path
+from PIL import Image
+
+SRC_DIR = Path("images/bags")
+SHRINK = 0.78  # bag occupies 78% of canvas → ~11% margin each side
+
+def add_margin(path):
+    img = Image.open(path).convert("RGB")
+    w, h = img.size
+    new_w, new_h = int(w * SHRINK), int(h * SHRINK)
+    bag = img.resize((new_w, new_h), Image.LANCZOS)
+    canvas = Image.new("RGB", (w, h), (255, 255, 255))
+    canvas.paste(bag, ((w - new_w) // 2, (h - new_h) // 2))
+    canvas.save(path, "JPEG", quality=88, optimize=True)
+
+for p in sorted(SRC_DIR.glob("*.jpg")):
+    add_margin(p)
+```
+
+**Destructive — overwrites the cropped images in place.** If you need to re-run, restore originals via `git checkout HEAD -- images/bags/` first, otherwise you'll shrink the already-padded image and the bag will get smaller and smaller.
+
+---
+
 ## Notes & gotchas
 
 - **Chrome MCP is logged in** to Instagram; **Playwright is not**. Older reels (DX*) return "content unavailable" in Playwright.
@@ -246,3 +290,4 @@ The cropper always reads from `.tmp/bags_original/`, so re-running is non-destru
 - **Caption parsing:** Instagram puts the caption in a `<span dir="auto">` containing the text. Sold status is detected from the words `SOLD` or `SOLD OUT` in the caption.
 - **NEVER ship without verifying centring with a screenshot.** Numerical metrics (dx%, dy%) can disagree with visual perception when a bag's strap goes off to one side or a hand is visible. After running `verify_centering.py`, take screenshots of EVERY bag (or at least every flagged one) on the rendered site and confirm L/R margins look equal. Earlier in this project, the assistant pushed off-centre crops three times because it relied on metrics alone — don't repeat that.
 - **Always look at all four margins.** Top, bottom, left, and right. A bag with equal top/bottom margins but heavy bias to one side is still "off-centre" and the store owner WILL notice.
+- **Never ship bags that fill the frame edge-to-edge.** Auto-cropping produces tight crops with no breathing room. Always run `add_margins.py` after cropping. The store owner flagged this specifically: bags need visual padding so they don't look cramped. Use pure white `(255,255,255)` only — sampled edge colours produce ugly mismatched borders when hands or dark backgrounds pollute the sample.

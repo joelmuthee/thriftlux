@@ -344,6 +344,7 @@ img { max-width: 100%; display: block; }
 }
 .btn-card.primary:hover:not(:disabled) { background: var(--gold); color: var(--ink); border-color: var(--gold); }
 .btn-card:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-card .wa-icon { vertical-align: -3px; margin-right: 6px; }
 
 /* ===== INFO ===== */
 .info {

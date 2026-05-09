@@ -105,12 +105,50 @@ Common failures:
 
 ---
 
+## Buyer name capture popup → GHL
+
+Every site ships with a "Mark as sold" popup in the admin that captures buyer name + phone + notes and forwards them to GHL automatically. This is a **paid feature** — it's the main reason a client pays Ksh 5k/mo instead of running a free Wix site. Without GHL integration, you're just a static catalog. With it, you're a CRM-fed lead engine.
+
+### How the flow works
+
+1. Admin clicks "Mark sold" on a bag in `admin.html`
+2. Custom popup opens (Cormorant title, gold accent, dark button — branded)
+3. Admin types buyer name + phone (+ optional notes like drop-off location)
+4. On Save: bag goes SOLD in KV **and** the buyer details POST to `/api/buyer` on the Worker
+5. Worker forwards to `https://backend.leadconnectorhq.com/forms/submit` with a reCAPTCHA Enterprise token + spoofed Origin/Referer headers
+6. GHL creates/updates the contact in the client's subaccount, tagged with what they bought
+
+### What you need to set up per client
+
+For each new client you need to provision a GHL form and wire the IDs into both `admin.js` and `worker/src/index.js`. Specifically:
+
+| Place | What to put | Where it currently is (ThriftLux) |
+|---|---|---|
+| `admin.js` `GHL_RECAPTCHA_KEY` | reCAPTCHA Enterprise site key from the GHL form widget | `6LeDBFwpAAAAAJe8ux9-imrqZ2ueRsEtdiWoDDpX` (this is GHL's global key, same for all forms — leave it as-is) |
+| `worker/src/index.js` `formId` | The GHL form's ID | `BWrG36c6p56ATDThPdN7` |
+| `worker/src/index.js` `locationId` | The client's GHL subaccount (location) ID | `aTZHRdo8ius6WBzGQ5GD` |
+| `worker/src/index.js` `multi_line_280v` field key | The Notes field's query key — varies per form | `multi_line_280v` (regenerated per form) |
+
+To get these: open the GHL subaccount → Sites → Forms → create a form with **First Name, Phone, Multi-line text (Notes)** → Integrate → grab the form ID from the embed snippet's `data-form-id`. Location ID is in the URL of any GHL page (`/v2/location/<locationId>/...`). For the Notes field's query key, click the field in the form builder and read the "Query Key" in the right panel.
+
+### Caveats
+
+- **The captcha route is fragile.** GHL's reCAPTCHA Enterprise key is registered for their domains. Tokens generated from the client's own domain *might* get rejected by GHL's backend. If submissions silently fail (Worker returns `ok:false, status:401`), check the GHL form Settings for a captcha toggle or fall back to one of: paid Inbound Webhook, embedded iframe, or manual contact entry.
+- **Don't ship a client site without testing this end-to-end.** Mark a fake bag sold with a test name → check Contacts in their GHL subaccount within 30s. If the contact doesn't appear, the integration is broken and they're paying 5k/mo for nothing.
+- **The custom popup HTML lives in `admin.html` (search for `BUYER CAPTURE MODAL`).** The submit logic is in `admin.js` (`commitSold` + `sendBuyerToGHL`). The proxy endpoint is in `worker/src/index.js` (`/api/buyer`). All three need to stay in sync.
+
+### What to tell the client
+
+Don't say "GHL". Say **"Every customer who buys gets saved to your contacts list automatically — so when new stock drops you can WhatsApp them in one click instead of starting from scratch."** That's the value, not the plumbing.
+
+---
+
 ## Pricing guidance (only if user asks)
 
 - **Cloudflare Worker free tier**: 100k requests/day. Tiny Nairobi catalogs use <100/day. Free.
 - **GitHub Pages**: Free.
 - **Domain**: ~Ksh 1,500/year for `.co.ke`, optional. Default `<username>.github.io/<slug>/` works free forever.
-- **Joel's pricing model**: Ksh 15-25k setup, Ksh 1-2k/month maintenance. Decided per session — don't quote without checking.
+- **Joel's pricing model**: Ksh 5,000/month, no setup fee. First 3 months paid upfront (Ksh 15,000) so the build cost is covered before going monthly. Cancel anytime after month 3. Annual upfront option: Ksh 50,000/year (saves 10k vs monthly). Don't quote different numbers without checking with Joel first.
 
 ---
 

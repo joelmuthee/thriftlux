@@ -1,58 +1,65 @@
 # Client provisioning
 
-## `new-client.sh`
+## `new-client.sh` — one-command site spin-up
 
-Spin up a new WhatsApp catalog site (clone of ThriftLux) in ~30 seconds.
+### How to run it
 
-### Usage
-
-From the root of the `thriftlux-ke` repo (which is your template):
+From the `thriftlux-ke` repo root, just run:
 
 ```bash
-./tools/new-client.sh <slug> <whatsapp_no_plus> "<Business Name>"
+./tools/new-client.sh
 ```
 
-**Example:**
+No arguments needed. The script asks you 3 questions:
 
-```bash
-./tools/new-client.sh mamambogabakery 254712345678 "Mama Mboga Bakery"
-```
+1. **Instagram URL or handle** — paste anything: `https://instagram.com/mamamboga.ke/`, `@mamamboga.ke`, even just `mamamboga.ke`. The script extracts the handle and uses it to name everything internally.
+2. **WhatsApp number** — country code + digits, no `+` or spaces. e.g. `254712345678`.
+3. **Business name** — exactly as it should appear on the site. e.g. `Mama Mboga Bakery`.
 
-### What it does
+Then it confirms the details, asks you to press ENTER, and runs.
 
-1. Copies this entire repo into a sibling directory (`../mamambogabakery/`)
-2. Strips ThriftLux's bags, history, and CNAME
-3. Generates a fresh admin password and admin token
+### What it does automatically
+
+1. Copies the ThriftLux template into `~/Website Designs/<slug>/`
+2. Wipes ThriftLux's bags, history, CNAME (clean slate)
+3. Generates a fresh admin password and a fresh worker token
 4. Creates a brand-new Cloudflare Worker named `<slug>-api`
 5. Creates a brand-new KV namespace
-6. Sets the admin token as a Worker secret (never in source code)
+6. Sets the worker token as a Worker secret (never in source code)
 7. Deploys the Worker
-8. Rewrites `admin.js` / `main.js` / `index.html` with the new values
-9. Seeds the Worker's KV with an empty catalog
-10. Initialises a fresh git repo
+8. Rewrites `admin.js` / `main.js` / `index.html` / `admin.html` with the new values
+9. Seeds the Worker's KV with an empty catalog + the WhatsApp number
+10. Initialises a fresh git repo with one commit on `main`
 
-### What you still do manually
+### What it tells you to do at the end
 
-1. Push to GitHub (`gh repo create` or manual)
-2. Enable GitHub Pages in repo settings
-3. (Optional) Point a custom domain
-4. Replace the logo / favicon
-5. Send the admin URL + password to the client
+The script prints exact step-by-step instructions for the 3 manual things you still have to do:
 
-### Pre-requisites
+- **STEP 1** — Push to GitHub (one command if you have `gh`, otherwise 6 clicks)
+- **STEP 2** — Turn on GitHub Pages (3 clicks in repo settings)
+- **STEP 3** — Send the admin URL + password to the client
 
-You only need to set these up **once on your machine**:
+Plus optional steps when the client is ready:
+- Custom domain
+- Replace logo
+- Tweak brand colour
+
+The password is shown in a box at the end of the run. **Save it immediately** — the script doesn't store it anywhere.
+
+### One-time setup on your machine
+
+Before the first run, install these once:
 
 - Node.js + npx
 - Python 3
-- `curl`, `git`, `bash`
+- `git`, `bash`, `curl`
 - `npx wrangler login` (authenticates with Cloudflare)
-- `gh auth login` (optional — for repo creation)
+- `gh auth login` (optional, lets the script auto-create the GitHub repo)
 
-### Pricing model
+### Cost
 
-Cloudflare Worker free tier = 100k requests/day. A small Nairobi business catalog won't come close. So infra cost per client is ~Ksh 0/month.
+Cloudflare Worker free tier covers ~100k requests/day. A small Nairobi catalog won't come close — infra cost per client is essentially zero.
 
-The only ongoing cost is the domain (~Ksh 1500/year for `.co.ke`, free if you use the GitHub Pages subdomain).
+The only ongoing cost is a custom domain (~Ksh 1500/year for `.co.ke`), which is optional. The default `<your-username>.github.io/<slug>/` URL is free forever.
 
-Charge whatever the market bears — Ksh 15-25k setup is reasonable.
+Charge whatever the market bears. Ksh 15-25k setup is reasonable.

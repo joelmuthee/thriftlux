@@ -32,12 +32,24 @@
   <div class="admin-header">
     <h1>ThriftLux Admin</h1>
     <div class="admin-actions">
-      <button class="btn-admin" id="exportBtn">Export data.json</button>
-      <button class="btn-admin" id="importBtn">Import data.json</button>
-      <input id="importFile" type="file" accept=".json" style="display:none;">
-      <button class="btn-admin" id="resetBtn">Reset to file</button>
       <a class="btn-admin" href="index.html" target="_blank">View site →</a>
       <button class="btn-admin danger" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <!-- SYNC SETTINGS -->
+  <div class="sync-panel">
+    <h3>GitHub Sync</h3>
+    <p id="tokenStatus" class="token-status warn">Checking…</p>
+    <p style="font-size:13px;color:#666;margin:8px 0 12px;">
+      Changes you make here are committed directly to GitHub and go live on the site within ~30 seconds.<br>
+      You need a GitHub Personal Access Token with <strong>Contents: Read &amp; Write</strong> permission for this repo.<br>
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:#8b5e3c;">Create a fine-grained token →</a>
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input id="tokenInput" type="password" placeholder="Paste GitHub token here (stays on your device)" style="flex:1;min-width:220px;padding:8px 12px;border:1.5px solid #d4c5b0;border-radius:6px;font-size:14px;font-family:monospace;">
+      <button class="btn-admin primary" id="saveTokenBtn">Save token</button>
+      <button class="btn-admin" id="clearTokenBtn">Clear</button>
     </div>
   </div>
 
@@ -49,7 +61,7 @@
       <label>Bag image</label>
       <input id="imageInput" type="file" accept="image/*">
       <div id="imagePreview" style="margin-top:10px;"></div>
-      <p style="font-size:12px;color:#999;margin-top:6px;">Image is stored as base64 inside the bag data. Recommended: square crop, ~1080×1080.</p>
+      <p style="font-size:12px;color:#999;margin-top:6px;">Image uploads directly to the site repo. Recommended: square crop, ~1080×1080.</p>
     </div>
 
     <div class="field">

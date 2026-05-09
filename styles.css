@@ -455,6 +455,11 @@ img { max-width: 100%; display: block; }
 .btn-admin.danger { color: #b00020; border-color: #f3c5cc; }
 .btn-admin.danger:hover { background: #b00020; color: #fff; border-color: #b00020; }
 
+.sync-panel { background: #fff; border: 1.5px solid #d4c5b0; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; }
+.sync-panel h3 { font-family: var(--serif); font-size: 20px; font-weight: 500; margin: 0 0 8px; }
+.token-status { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+.token-status.ok { color: #2e7d32; }
+.token-status.warn { color: #b45309; }
 .admin-form { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 24px; margin-bottom: 24px; }
 .admin-form h2 { font-family: var(--serif); font-size: 24px; margin-bottom: 18px; }
 .field { margin-bottom: 14px; }

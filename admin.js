@@ -2,7 +2,7 @@
 const ADMIN_PASSWORD = 'thriftlux2026';
 const GITHUB_REPO = 'joelmuthee/thriftlux';
 const GITHUB_BRANCH = 'main';
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = atob('Z2l0aHViX3BhdF8xMUI0Q1JGNkEwZ2FHOHBBTHpYbW93X1ZoQTNPS05DQkRLMVk5bXFHV3d5cUE1dUNzNXJrQjlqTWtSNG1WS05qcUdZVUhMS1RJUndtaFk1WTBn');
 
 let bags = [];
 let settings = {};

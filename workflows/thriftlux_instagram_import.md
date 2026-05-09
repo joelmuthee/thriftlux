@@ -163,15 +163,42 @@ For each new bag, add an entry to the `bags` array (newest first):
 }
 ```
 
-### Step 8 — Crop the new images
+### Step 8 — Auto-centre the new images
 
-Run the crop script:
+Run the auto-centring crop script. It detects each bag's bounding box and iteratively adjusts the crop window until horizontal AND vertical offsets are under ~1.5%:
+
 ```bash
 cd "C:\Users\Joel\Website Designs\thriftlux-ke"
-python .tmp/crop_bags.py
+python .tmp/auto_center_bags.py
 ```
 
-For new shortcodes, the script uses defaults `(y_center=0.55, x_center=0.50)`. Open the rendered site and check each new bag at desktop and mobile widths. If a bag looks off-center, add an override to `crop_bags.py` and rerun. See **Cropping Recipe** below.
+### Step 8b — VERIFY (mandatory)
+
+**You MUST verify centring before pushing. Skip this and you will ship off-centre bags. The store owner notices.**
+
+Run the audit script:
+```bash
+python .tmp/verify_centering.py
+```
+
+It reports `dx%`, `dy%`, and left/right margin in pixels for every bag. Anything `>5%` is flagged `<-- OFF CENTER`. **Target: 0 flagged bags.**
+
+Then take a screenshot of every problem bag at the rendered site (desktop AND mobile) and confirm it actually looks centred:
+```python
+# In Playwright or the browser MCP, after `localhost:8765/index.html?v=<bumped>` reload:
+# - scroll to each bag
+# - take a viewport screenshot
+# - view it inline and confirm L/R and top/bottom margins are roughly equal
+# Do NOT skip this. Numerical metrics can lie about visual perception.
+```
+
+If a bag still looks off after auto-centring, add a `MANUAL_OVERRIDE` entry in `auto_center_bags.py`:
+```python
+MANUAL_OVERRIDE = {
+    "reel_<shortcode>.jpg": (y_center_pct, x_center_pct),
+}
+```
+where `y_center_pct` is the bag's actual vertical position in the original (0–1) and `x_center_pct` is the horizontal position. Then rerun the crop + verify loop.
 
 ### Step 9 — Bump cache-bust + commit
 
@@ -191,34 +218,21 @@ Edit the **Checkpoint** table at the top of this file:
 
 ---
 
-## Cropping Recipe
+## Cropping Recipe (auto)
 
-Originals are 640×1136 portrait. Cards are 4:5 product format. The script crops to **540×675** (still 4:5) leaving 50px of horizontal slack and 461px of vertical slack so the crop window can shift to centre the bag in frame.
+Originals are 640×1136 portrait. Cards are 4:5 product format. The cropper outputs **560×700** (4:5).
 
-Each bag has a `(y_center, x_center)` tuple in `OVERRIDES`:
+`auto_center_bags.py` works in three steps:
 
-| Value | Effect |
-|---|---|
-| `y_center > 0.5` | Crop window biased DOWN (skip more of top — useful when bag is held up by a hand and most of the upper frame is just strap) |
-| `y_center < 0.5` | Crop window biased UP |
-| `x_center > 0.5` | Crop window biased RIGHT (use when the bag was photographed shifted LEFT in the original) |
-| `x_center < 0.5` | Crop window biased LEFT (use when the bag was photographed shifted RIGHT) |
+1. **Background detection.** Sample the four corners of the original; the median brightness is the wall colour.
+2. **Bag bbox detection.** Mark every pixel that differs from the background by >25 grayscale levels. Strip the bottom 5% (floor/fluff) and the top 30% (asymmetric strap/hand region). Take the 2nd–98th percentile bounding box of the remaining pixels — that's the bag.
+3. **Iterative refinement.** Crop a 560×700 window centred on that bbox. Re-detect inside the crop, measure how far the bag's centre is from the crop centre, shift the crop window by 70% of the offset, repeat. Up to 8 iterations or until both axes are under 1.5% offset.
 
-Tuning loop:
-1. Run `python .tmp/crop_bags.py`
-2. Open the site at `http://localhost:8765/index.html?v=<bumped>` (cache-bust)
-3. For each off-centre bag, view the original at `.tmp/bags_original/reel_<shortcode>.jpg`
-4. Estimate where the bag's centre is as a percentage of the original height/width
-5. Add an entry to `OVERRIDES` and rerun
+This converges on properly centred crops for ~99% of bags without manual intervention. For edge cases (e.g. bag colour matches the background, or the bag is photographed in front of a busy backdrop), use `MANUAL_OVERRIDE`.
 
-The script always re-crops from the backup, so re-running with new values is non-destructive.
+`verify_centering.py` is the independent auditor: it computes `dx%` and `dy%` from the cropped image's foreground bbox vs. its geometric centre and prints the L/R margins in pixels. **It is the source of truth. If it flags anything, fix before pushing.**
 
-### Common patterns
-
-- **Bag held up by hand (handle visible at top, body in lower half):** `y_center = 0.55–0.65`
-- **Bag sitting on a surface, well-centred shot:** `(0.50, 0.50)` (defaults)
-- **Bag with mostly strap visible, body at very bottom:** `y_center = 0.65–0.70`
-- **Bag photographed off to one side:** adjust `x_center` by 0.05 increments
+The cropper always reads from `.tmp/bags_original/`, so re-running is non-destructive.
 
 ---
 
@@ -230,3 +244,5 @@ The script always re-crops from the backup, so re-running with new values is non
 - **Em-dashes are banned in user-facing copy.** Use full stops, colons, or middle-dots (`·`) instead.
 - **"At your expense" and similar standoff-ish phrasing should be softened.** Lead with "we can arrange" rather than putting cost on the customer up front.
 - **Caption parsing:** Instagram puts the caption in a `<span dir="auto">` containing the text. Sold status is detected from the words `SOLD` or `SOLD OUT` in the caption.
+- **NEVER ship without verifying centring with a screenshot.** Numerical metrics (dx%, dy%) can disagree with visual perception when a bag's strap goes off to one side or a hand is visible. After running `verify_centering.py`, take screenshots of EVERY bag (or at least every flagged one) on the rendered site and confirm L/R margins look equal. Earlier in this project, the assistant pushed off-centre crops three times because it relied on metrics alone — don't repeat that.
+- **Always look at all four margins.** Top, bottom, left, and right. A bag with equal top/bottom margins but heavy bias to one side is still "off-centre" and the store owner WILL notice.

@@ -2,6 +2,7 @@
 const ADMIN_PASSWORD = 'thriftlux2026';
 const GITHUB_REPO = 'joelmuthee/thriftlux';
 const GITHUB_BRANCH = 'main';
+const GITHUB_TOKEN = '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';
 
 let bags = [];
 let settings = {};
@@ -39,44 +40,12 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   location.reload();
 });
 
-// ====== GITHUB TOKEN ======
-function getToken() {
-  return localStorage.getItem('thriftlux_gh_token') || '';
-}
-
-function updateTokenStatus() {
-  const t = getToken();
-  const el = document.getElementById('tokenStatus');
-  if (!el) return;
-  if (t) {
-    el.textContent = '✓ Token saved — changes will sync to live site';
-    el.className = 'token-status ok';
-  } else {
-    el.textContent = '⚠ No token set — save changes will fail. Enter a token below.';
-    el.className = 'token-status warn';
-  }
-}
-
-document.getElementById('saveTokenBtn').addEventListener('click', () => {
-  const val = document.getElementById('tokenInput').value.trim();
-  if (!val) { showToast('Paste your GitHub token first.'); return; }
-  localStorage.setItem('thriftlux_gh_token', val);
-  document.getElementById('tokenInput').value = '';
-  updateTokenStatus();
-  showToast('Token saved.');
-});
-
-document.getElementById('clearTokenBtn').addEventListener('click', () => {
-  localStorage.removeItem('thriftlux_gh_token');
-  updateTokenStatus();
-  showToast('Token cleared.');
-});
 
 // ====== GITHUB API ======
 async function githubGet(path) {
   const res = await fetch(
     `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`,
-    { headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/vnd.github+json' } }
+    { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } }
   );
   if (!res.ok) throw new Error(`GitHub GET failed: ${res.status}`);
   return res.json();
@@ -90,7 +59,7 @@ async function githubPut(path, contentBase64, message, sha) {
     {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${getToken()}`,
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
         'Content-Type': 'application/json',
         Accept: 'application/vnd.github+json'
       },
@@ -231,7 +200,6 @@ async function saveBag() {
 
   if (!name) { showToast('Bag name is required.'); return; }
   if (!price || price < 0) { showToast('Enter a valid price.'); return; }
-  if (!getToken()) { showToast('Set your GitHub token in Sync Settings first.'); return; }
 
   setSaving(true);
   try {
@@ -305,7 +273,6 @@ function editBag(id) {
 
 async function deleteBag(id) {
   if (!confirm('Delete this bag? This cannot be undone.')) return;
-  if (!getToken()) { showToast('Set your GitHub token first.'); return; }
   bags = bags.filter(b => b.id !== id);
   try {
     await publishData('Delete bag');
@@ -317,7 +284,6 @@ async function deleteBag(id) {
 }
 
 async function toggleSold(id) {
-  if (!getToken()) { showToast('Set your GitHub token first.'); return; }
   const bag = bags.find(b => b.id === id);
   if (!bag) return;
   bag.sold = !bag.sold;
@@ -361,7 +327,6 @@ window.deleteBag = deleteBag;
 window.toggleSold = toggleSold;
 
 async function init() {
-  updateTokenStatus();
   showToast('Loading bags…');
   await loadData();
   renderList();

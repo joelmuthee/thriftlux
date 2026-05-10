@@ -367,8 +367,38 @@ document.getElementById('buyerSkipBtn').addEventListener('click', () => commitSo
 document.getElementById('buyerCancelBtn').addEventListener('click', closeBuyerModal);
 buyerModal.addEventListener('click', e => { if (e.target === buyerModal) closeBuyerModal(); });
 
+// ====== STATS ======
+const fmtKsh = n => 'Ksh ' + Number(n || 0).toLocaleString('en-KE');
+
+function renderStats() {
+  const now = Date.now();
+  const DAY = 86400000;
+  const buckets = { today: 0, week: 0, month: 0, all: 0 };
+  const counts  = { today: 0, week: 0, month: 0, all: 0 };
+  for (const b of bags) {
+    if (!b.sold) continue;
+    const price = Number(b.price) || 0;
+    buckets.all += price; counts.all++;
+    const soldAt = b.soldTo?.soldAt ? new Date(b.soldTo.soldAt).getTime() : null;
+    if (!soldAt) continue;
+    const age = now - soldAt;
+    if (age < DAY)        { buckets.today += price; counts.today++; }
+    if (age < 7 * DAY)    { buckets.week  += price; counts.week++; }
+    if (age < 30 * DAY)   { buckets.month += price; counts.month++; }
+  }
+  const total = bags.length;
+  const sellThrough = total ? Math.round((counts.all / total) * 100) : 0;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('statTodayRev',   fmtKsh(buckets.today));  set('statTodayCount',  counts.today);
+  set('statWeekRev',    fmtKsh(buckets.week));   set('statWeekCount',   counts.week);
+  set('statMonthRev',   fmtKsh(buckets.month));  set('statMonthCount',  counts.month);
+  set('statAllRev',     fmtKsh(buckets.all));    set('statAllCount',    counts.all);
+  set('statSellThrough', sellThrough + '%');
+}
+
 // ====== LIST ======
 function renderList() {
+  renderStats();
   const list = document.getElementById('adminList');
   document.getElementById('bagCount').textContent = bags.length;
   list.innerHTML = bags.map(b => {

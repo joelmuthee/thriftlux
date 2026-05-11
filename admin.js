@@ -715,7 +715,7 @@ function renderAnalytics() {
       <div class="recent-row">
         <img src="${b.image}" alt="">
         <div style="flex:1;min-width:0;"><div class="recent-name">${escapeHtml(b.name)}</div><div class="recent-meta">${n} ${n === 1 ? 'time' : 'times'}</div></div>
-      </div>`).join('') : '<p style="font-size:13px;color:#999;">Nothing tracked yet on this browser.</p>';
+      </div>`).join('') : '<p style="font-size:13px;color:#999;">No data yet — come back once visitors start using the site.</p>';
   }
   document.getElementById('analyticsTopViews').innerHTML = topList(views);
   document.getElementById('analyticsTopEnquiries').innerHTML = topList(enqs);

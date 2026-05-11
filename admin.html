@@ -149,9 +149,9 @@
   <!-- ====== ANALYTICS ====== -->
   <section class="dash" id="analyticsDash">
     <h2 class="dash-title">Analytics</h2>
-    <p style="font-size:13.5px;color:#4a4540;margin:-8px 0 16px;">
-      What's being looked at and clicked. <strong>Data is per-browser</strong> (collected in <code>localStorage</code> on each visitor's device), so this currently shows YOUR browsing of the public site. For visitor-wide stats, drop in Cloudflare Web Analytics (free, one-line beacon).
-    </p>
+    <div class="pending-banner">
+      <strong>Pending implementation.</strong> The public site doesn't yet emit tracking events, so every number below will stay at 0 until <code>main.js</code> writes lightbox-opens, Enquire clicks, IG clicks, and wishlist saves to <code>localStorage.thriftlux_analytics</code>. We deliberately do NOT show fake or seeded numbers here — see the "don't ship fake analytics" rule in <code>workflows/thriftlux_instagram_import.md</code>. For real visitor-wide stats, the cleanest fix is Cloudflare Web Analytics (free, one-line beacon).
+    </div>
     <div class="inv-kpi-grid" id="analyticsKpiGrid"></div>
     <div class="dash-grid" style="margin-top:18px;">
       <div class="dash-card">
@@ -170,15 +170,23 @@
     <h2 id="formTitle">Add a new bag</h2>
     <input type="hidden" id="editingId">
 
-    <!-- IG quick-add -->
+    <!-- IG quick-add — the recommended path. Highlighted to be unmissable. -->
     <div class="field ig-quick-add">
-      <label>⚡ Quick-add from Instagram <small style="font-weight:400;color:#999;">— paste a reel URL to fetch the cover image + caption (worker `/api/ig-fetch` required, currently NOT deployed; falls back to a friendly message)</small></label>
+      <div class="ig-quick-head">
+        <span class="ig-quick-badge">RECOMMENDED</span>
+        <h3>Add from Instagram</h3>
+      </div>
+      <p class="ig-quick-desc">
+        Already posted the bag on <a href="https://www.instagram.com/thriftlux.ke/" target="_blank" rel="noopener">@thriftlux.ke</a>? Paste the reel or post URL and we'll pull the cover image, caption, and price automatically. Faster than re-uploading.
+      </p>
       <div class="ig-quick-row">
         <input id="igQuickInput" type="url" placeholder="https://www.instagram.com/reel/...">
-        <button class="btn-admin primary" id="igQuickBtn" type="button">Fetch</button>
+        <button class="btn-admin gold" id="igQuickBtn" type="button">⚡ Fetch from Instagram</button>
       </div>
       <p id="igQuickStatus" class="ig-quick-status"></p>
     </div>
+
+    <div class="form-or-divider"><span>or upload manually below ↓</span></div>
 
     <div class="field">
       <label>Main image</label>

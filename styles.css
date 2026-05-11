@@ -645,15 +645,61 @@ img { max-width: 100%; display: block; }
 .restock-btn { padding: 4px 10px; font-size: 11px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; background: #fff; font-family: inherit; transition: 0.15s; }
 .restock-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-/* IG quick-add */
-.ig-quick-add { background: linear-gradient(135deg, #fff8ec, #f5e9d3); border: 1px solid #ead7a8; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; }
-.ig-quick-row { display: flex; gap: 8px; margin-top: 6px; }
-.ig-quick-row input { flex: 1; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px; background: #fff; color: var(--ink); }
-.ig-quick-row input:focus { outline: none; border-color: var(--gold); }
-.ig-quick-row .btn-admin { flex-shrink: 0; }
-.ig-quick-status { font-size: 12.5px; margin: 8px 0 0; min-height: 18px; }
+/* IG quick-add — the recommended primary path. Visually loud so Venessa
+   reaches for it before scrolling to the manual upload. */
+.ig-quick-add {
+  background: linear-gradient(135deg, #fff8ec 0%, #f5e9d3 60%, #ead7a8 100%);
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 18px rgba(201,169,97,0.18), 0 1px 3px rgba(0,0,0,0.04);
+  position: relative;
+}
+.ig-quick-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.ig-quick-head h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+.ig-quick-badge {
+  display: inline-block;
+  background: var(--ink); color: var(--gold);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+  padding: 4px 9px; border-radius: 99px;
+}
+.ig-quick-desc { font-size: 13.5px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 12px; }
+.ig-quick-desc a { color: var(--gold-deep); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.ig-quick-row { display: flex; gap: 10px; }
+.ig-quick-row input {
+  flex: 1; padding: 13px 16px; border: 1px solid var(--gold); border-radius: 10px;
+  font-family: inherit; font-size: 15px; background: #fff; color: var(--ink);
+}
+.ig-quick-row input:focus { outline: none; border-color: var(--gold-deep); box-shadow: 0 0 0 3px rgba(201,169,97,0.2); }
+.ig-quick-row .btn-admin { flex-shrink: 0; padding: 12px 22px; font-size: 14px; }
+.ig-quick-status { font-size: 12.5px; margin: 10px 0 0; min-height: 18px; }
 .ig-quick-status.ok { color: #1a7a40; }
 .ig-quick-status.err { color: #b00020; }
+@media (max-width: 600px) {
+  .ig-quick-add { padding: 16px 16px 18px; }
+  .ig-quick-row { flex-direction: column; }
+  .ig-quick-row .btn-admin { padding: 14px 16px; font-size: 14px; }
+}
+
+/* "or upload manually below" divider — separates the recommended IG path
+   from the manual file upload so it's obvious they're alternatives. */
+.form-or-divider {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 4px 0 18px;
+}
+.form-or-divider::before, .form-or-divider::after {
+  content: ""; flex: 1; height: 1px; background: var(--line);
+}
+.form-or-divider span { padding: 0 4px; }
 
 /* Extra images preview grid */
 .extra-imgs-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 8px; }
@@ -698,6 +744,24 @@ img { max-width: 100%; display: block; }
 /* Section divider */
 .section-divider { font-family: var(--serif); font-size: 22px; font-weight: 500; margin: 32px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: baseline; }
 .section-divider span { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); font-weight: 400; }
+
+/* Pending-implementation banner — used on dashboards whose data source
+   isn't wired yet. The visible "Pending" label is what stops a future
+   maintainer (or a hurried Claude) from feeling tempted to seed the
+   widget with placeholder numbers. See workflow doc gotcha. */
+.pending-banner {
+  background: #fff4e0;
+  border: 1px solid #f0c060;
+  border-left: 4px solid #a06000;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #6b4400;
+  line-height: 1.55;
+  margin: -8px 0 18px;
+}
+.pending-banner strong { color: #b04400; }
+.pending-banner code { background: rgba(160, 96, 0, 0.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
 
 @media (max-width: 760px) {
   .admin-wrap { padding: 24px 16px 60px; }

@@ -200,21 +200,37 @@ MANUAL_OVERRIDE = {
 ```
 where `y_center_pct` is the bag's actual vertical position in the original (0–1) and `x_center_pct` is the horizontal position. Then rerun the crop + verify loop.
 
-### Step 9 — Add breathing room (margins) around the bag
+### Step 9 — Margins are CSS, not baked into the image (do NOT run add_margins.py)
 
-After centring, the bag fills the 560×700 frame edge-to-edge. The store owner has flagged this — bags need visual margin so they don't look cramped against the card edges.
+Earlier in this project we baked an `11%` white border into every JPEG via `.tmp/add_margins.py`. That approach is **dead**. It made every image 78% bag + 22% white pixels saved to disk, which:
 
-Run `.tmp/add_margins.py` (creates if missing — see "Margin Recipe" below). It:
-1. Sources from `images/bags/` (the freshly cropped images)
-2. Shrinks the bag to **78%** of canvas (so ~11% white margin on each side)
-3. Pastes onto a pure white `(255,255,255)` canvas of the same dimensions
-4. Saves back over the original at `quality=88`
+- lost image resolution unnecessarily (bag rendered smaller but at the same file size)
+- meant re-running the script doubled the padding if you forgot it was already applied
+- coupled the card's visual treatment to the image file itself
 
-White matches the card background (`--bg-card: #ffffff`) so the padding blends seamlessly — the bag appears to "float" inside the card.
+The current approach is **CSS-only**, in `styles.css`:
 
-**Do NOT use sampled-edge background colour.** Earlier attempts sampled corner/edge pixels to match the bag photo's bg, but hands, table edges, dark walls, etc. all polluted the sample and produced ugly mismatched borders (e.g. brownish frames around blue bags). White is the only reliable choice.
+```css
+.card-img-wrap {
+  aspect-ratio: 4 / 5;
+  background: #fff;                /* the breathing room you see around the bag */
+  display: flex; align-items: center; justify-content: center;
+}
+.card-img {
+  width: 82%; height: 82%;         /* bag fills 82% of the card; ~9% gap each side */
+  object-fit: cover;
+  border-radius: 12px;             /* rounded corners on the bag photo itself */
+}
+```
 
-After running, verify with the same screenshot loop as Step 8 — every bag should now have visible breathing room on all four sides.
+What this means for the import workflow:
+
+- After Step 8 (auto-centring) the bag image is `560×700` and fills the file edge-to-edge. **That's correct. Don't pad it.** The card renders it at 82% inside a flex-centered wrap whose background is white, so the margin appears around it automatically.
+- Image quality stays sharper — no resampling, no quality-88 re-save.
+- The bag gets clean 12px rounded corners.
+- Margin width is a single CSS value (`82%`). Change it once, every bag updates. The store owner flagged the original tight-frame look — that fix lives in `styles.css`, not in any cropping script.
+
+If you ever see a card where the bag is butting against the card edge with no breathing room, the problem is `.card-img` width/height being set to `100%` somewhere — not a missing image step. Check `styles.css` first.
 
 ### Step 10 — Bump cache-bust + commit
 
@@ -252,31 +268,25 @@ The cropper always reads from `.tmp/bags_original/`, so re-running is non-destru
 
 ---
 
-## Margin Recipe (`add_margins.py`)
+## Margin Recipe (CSS, not a script)
 
-Runs AFTER cropping. Adds white padding around each bag so it has breathing room inside the card.
+The bag's breathing room inside the card is rendered by the card's `display: flex` wrap and the image's `width/height: 82%`. There is no script to run. The original `add_margins.py` is retired — bake nothing into the image.
 
-```python
-from pathlib import Path
-from PIL import Image
+If at some point a card looks tight again, the fix is in `styles.css`:
 
-SRC_DIR = Path("images/bags")
-SHRINK = 0.78  # bag occupies 78% of canvas → ~11% margin each side
+| Selector | Property | Purpose |
+|---|---|---|
+| `.card-img-wrap` | `background: #fff` | The breathing-room colour the viewer sees |
+| `.card-img-wrap` | `display: flex; align-items: center; justify-content: center` | Centres the image both ways inside the wrap |
+| `.card-img` | `width: 82%; height: 82%` | Inset the image; raise toward 88–90% for tighter, lower toward 75% for airier |
+| `.card-img` | `object-fit: cover` | Bag fills the inset rectangle without distortion |
+| `.card-img` | `border-radius: 12px` | Rounded corners on the bag photo itself, distinct from the card |
 
-def add_margin(path):
-    img = Image.open(path).convert("RGB")
-    w, h = img.size
-    new_w, new_h = int(w * SHRINK), int(h * SHRINK)
-    bag = img.resize((new_w, new_h), Image.LANCZOS)
-    canvas = Image.new("RGB", (w, h), (255, 255, 255))
-    canvas.paste(bag, ((w - new_w) // 2, (h - new_h) // 2))
-    canvas.save(path, "JPEG", quality=88, optimize=True)
+Tuning notes that came out of three iterations on this:
 
-for p in sorted(SRC_DIR.glob("*.jpg")):
-    add_margin(p)
-```
-
-**Destructive — overwrites the cropped images in place.** If you need to re-run, restore originals via `git checkout HEAD -- images/bags/` first, otherwise you'll shrink the already-padded image and the bag will get smaller and smaller.
+- **78% felt floaty, 92% felt cramped.** 82% is what the store owner approved.
+- **Use the card's `#fff` background as the margin — don't paint margin onto the image.** When we baked margins in, the JPEG quality dropped and any later background-colour change to the card surface left a visible white box.
+- **Always give the bag its own `border-radius`** so it reads as a photo inside a card, not a card-filling background.
 
 ---
 
@@ -290,7 +300,7 @@ for p in sorted(SRC_DIR.glob("*.jpg")):
 - **Caption parsing:** Instagram puts the caption in a `<span dir="auto">` containing the text. Sold status is detected from the words `SOLD` or `SOLD OUT` in the caption.
 - **NEVER ship without verifying centring with a screenshot.** Numerical metrics (dx%, dy%) can disagree with visual perception when a bag's strap goes off to one side or a hand is visible. After running `verify_centering.py`, take screenshots of EVERY bag (or at least every flagged one) on the rendered site and confirm L/R margins look equal. Earlier in this project, the assistant pushed off-centre crops three times because it relied on metrics alone — don't repeat that.
 - **Always look at all four margins.** Top, bottom, left, and right. A bag with equal top/bottom margins but heavy bias to one side is still "off-centre" and the store owner WILL notice.
-- **Never ship bags that fill the frame edge-to-edge.** Auto-cropping produces tight crops with no breathing room. Always run `add_margins.py` after cropping. The store owner flagged this specifically: bags need visual padding so they don't look cramped. Use pure white `(255,255,255)` only — sampled edge colours produce ugly mismatched borders when hands or dark backgrounds pollute the sample.
+- **Margins come from the card, not from the image file.** The store owner flagged tight edge-to-edge bags; that was fixed by rendering the image at `82%` inside a flex-centred white card wrap with a 12px border radius (see "Margin Recipe" above). Do NOT bring back `add_margins.py` or any other script that bakes white padding into the JPEGs — we went through three iterations and the CSS-only approach is the one that stuck. If a card looks cramped, edit `.card-img` width/height in `styles.css`, not the image files.
 
 - **Don't ship fake analytics.** If a dashboard's data source isn't wired up, do not seed it with placeholder numbers, mock data, "demo" charts, or example rows. Either:
   1. Ship the data source first (the emitter, the API endpoint, the database table) before exposing the dashboard, **or**

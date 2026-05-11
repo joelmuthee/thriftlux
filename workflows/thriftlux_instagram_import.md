@@ -298,3 +298,68 @@ for p in sorted(SRC_DIR.glob("*.jpg")):
   Fake/seeded analytics rot trust the moment the owner spots a number that doesn't add up. Per CLAUDE.md's catalog standard: "Always disclose in the admin UI that this is per-browser, not server-aggregated" — and never imply tracking is happening when it isn't. Reference implementation: ThriftLux admin Analytics section (`#analyticsDash` in `admin.html`) ships the pending banner pointing back to this rule.
 
 - **The Instagram quick-add panel is the recommended path, not the manual upload.** Keep the `⚡ Add from Instagram` block at the TOP of the Add/Edit form, visually loud (gold border, gold glow, "RECOMMENDED" badge), with a `form-or-divider` separating it from manual upload below. Most new bags will already exist as a reel on the IG account — pulling them in by URL is faster than re-uploading. If the worker `/api/ig-fetch` endpoint is not yet deployed, the panel must fail gracefully with a friendly message pointing back to this workflow's manual flow (Steps 1–9), not hide itself.
+
+---
+
+## "Add from Instagram" panel — spec
+
+This is the recommended primary path for adding bags. It MUST be visually unmissable so the owner reaches for it before scrolling to the manual upload. Implementation reference: `admin.html` (`.ig-quick-add` block inside `#addForm`) + `styles.css` (`.ig-quick-add`, `.ig-quick-head`, `.ig-quick-badge`, `.ig-quick-desc`, `.ig-quick-row`, `.ig-quick-status`, `.form-or-divider`) + `admin.js` (`igQuickBtn` click handler).
+
+### Layout (top of `#addForm`, BEFORE main image field)
+
+```html
+<div class="field ig-quick-add">
+  <div class="ig-quick-head">
+    <span class="ig-quick-badge">RECOMMENDED</span>
+    <h3>Add from Instagram</h3>
+  </div>
+  <p class="ig-quick-desc">
+    Already posted the bag on
+    <a href="https://www.instagram.com/thriftlux.ke/" target="_blank" rel="noopener">@thriftlux.ke</a>?
+    Paste the reel or post URL and we'll pull the cover image, caption, and price automatically.
+    Faster than re-uploading.
+  </p>
+  <div class="ig-quick-row">
+    <input id="igQuickInput" type="url" placeholder="https://www.instagram.com/reel/...">
+    <button class="btn-admin gold" id="igQuickBtn" type="button">⚡ Fetch from Instagram</button>
+  </div>
+  <p id="igQuickStatus" class="ig-quick-status"></p>
+</div>
+
+<div class="form-or-divider"><span>or upload manually below ↓</span></div>
+```
+
+### Visual requirements (non-negotiable — store owner WILL miss it otherwise)
+
+| Element | Spec |
+|---|---|
+| Card background | `linear-gradient(135deg, #fff8ec 0%, #f5e9d3 60%, #ead7a8 100%)` — warm cream to champagne |
+| Border | **2px** solid `var(--gold)` (`#c9a961`). Not 1px. Not `var(--line)`. |
+| Shadow | `0 4px 18px rgba(201,169,97,0.18), 0 1px 3px rgba(0,0,0,0.04)` — soft gold halo |
+| Corner radius | 14px (matches card style elsewhere) |
+| Padding | 22px 24px desktop, 16px on mobile |
+| Badge | Black-on-gold "RECOMMENDED" pill, 10px font, `0.14em` letter-spacing |
+| Heading | Serif "Add from Instagram", 22px, weight 600 |
+| Description | 13.5px, includes a linked `@thriftlux.ke` in `var(--gold-deep)` with underline |
+| URL input | Gold border, 13px padding, 15px font. Focus shows `0 0 0 3px rgba(201,169,97,0.2)` glow. |
+| CTA button | `.btn-admin.gold` (gold fill, ink text, bold) with `⚡ Fetch from Instagram` label. NOT a small dark "Fetch" button. |
+| Divider below card | `.form-or-divider` saying "or upload manually below ↓" — uppercase, letter-spaced, with horizontal rules on either side. Makes manual upload feel like a fallback, not the default. |
+
+### Behaviour
+
+1. Pastes URL → `igQuickBtn` click → `GET ${API_BASE}/api/ig-fetch?url=<encoded>`
+2. Worker should return `{ imageUrl, caption, postUrl }`. The image is then fetched through the browser and staged via the same `readFileAsStaged` pipeline as a manual file pick — same upload flow on Save, no special case.
+3. Caption is parsed: first line `Name @1500/= [SOLD]` extracts `name` + `price`; full caption becomes the description with `#hashtags` stripped; presence of `SOLD` ticks the sold checkbox.
+4. `igQuickStatus` shows green tick on success, red message on failure. Status messages must never be HTML-techy ("404 from worker", "fetch failed at network layer"). Use plain English; point to this workflow when the endpoint isn't deployed.
+
+### Failure mode (worker `/api/ig-fetch` not deployed yet)
+
+Show this message verbatim — friendly, points back to the manual flow without exposing the failure cause to the owner:
+
+> ✗ IG fetch endpoint not deployed yet. Use the manual flow in `workflows/thriftlux_instagram_import.md` — download the reel cover, then use the Main image picker below.
+
+Do **not** hide the panel. Do **not** disable the button. Do **not** show a stack trace. The panel staying visible is what reminds the owner this path will be the default once the endpoint ships.
+
+### Why all this fuss
+
+Earlier in this project the IG panel was technically present but visually identical to every other form field — a small label and a small dark "Fetch" button buried above the Main image picker. The store owner consistently scrolled past it and uploaded files manually, which defeats the entire point. The gold-glow + RECOMMENDED badge + or-divider treatment is what reliably draws the eye before the manual upload does. Don't tone it down.

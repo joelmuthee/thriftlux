@@ -4,7 +4,6 @@
 const ADMIN_PASSWORD = 'thriftlux2026';
 const API_BASE = 'https://thriftlux-api.stawisystems.workers.dev';
 const ADMIN_TOKEN = atob('TGRCVjlCUEJzNTBrWXBzQjdNWUs1eDlUR1ZNNlh3bE5VUEMzTVRzN3BpUQ==');
-const ANALYTICS_KEY = 'thriftlux_analytics';
 
 let bags = [];
 let settings = {};
@@ -691,35 +690,6 @@ document.getElementById('broadcastStartBtn').addEventListener('click', () => {
   });
 });
 
-// ==================== ANALYTICS ====================
-function getAnalytics() {
-  try { return JSON.parse(localStorage.getItem(ANALYTICS_KEY)) || {}; } catch { return {}; }
-}
-function renderAnalytics() {
-  const a = getAnalytics();
-  const views = a.views || {};
-  const enqs = a.enquiries || {};
-  const igClicks = a.igClicks || {};
-  const wishlist = a.wishlist || {};
-  const sum = m => Object.values(m).reduce((s, n) => s + n, 0);
-
-  document.getElementById('analyticsKpiGrid').innerHTML = `
-    <div class="inv-kpi"><div class="inv-kpi-label">Lightbox opens</div><div class="inv-kpi-val">${sum(views)}</div></div>
-    <div class="inv-kpi"><div class="inv-kpi-label">Enquire clicks</div><div class="inv-kpi-val">${sum(enqs)}</div></div>
-    <div class="inv-kpi"><div class="inv-kpi-label">View-on-IG clicks</div><div class="inv-kpi-val">${sum(igClicks)}</div></div>
-    <div class="inv-kpi"><div class="inv-kpi-label">Wishlist saves</div><div class="inv-kpi-val">${sum(wishlist)}</div></div>
-  `;
-  function topList(map) {
-    const rows = Object.entries(map).map(([id, n]) => ({ b: bags.find(b => b.id === id), n })).filter(r => r.b).sort((a,b) => b.n - a.n).slice(0, 6);
-    return rows.length ? rows.map(({ b, n }) => `
-      <div class="recent-row">
-        <img src="${b.image}" alt="">
-        <div style="flex:1;min-width:0;"><div class="recent-name">${escapeHtml(b.name)}</div><div class="recent-meta">${n} ${n === 1 ? 'time' : 'times'}</div></div>
-      </div>`).join('') : '<p style="font-size:13px;color:#999;">No data yet — come back once visitors start using the site.</p>';
-  }
-  document.getElementById('analyticsTopViews').innerHTML = topList(views);
-  document.getElementById('analyticsTopEnquiries').innerHTML = topList(enqs);
-}
 
 // ==================== BULK ACTIONS ====================
 window.toggleBulk = id => { if (bulkSelected.has(id)) bulkSelected.delete(id); else bulkSelected.add(id); refreshBulkBar(); renderList(); };
@@ -793,7 +763,6 @@ function renderAll() {
   renderStats();
   renderInventory();
   renderBroadcast();
-  renderAnalytics();
   renderList();
 }
 

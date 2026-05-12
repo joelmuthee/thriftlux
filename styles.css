@@ -774,3 +774,119 @@ img { max-width: 100%; display: block; }
   .inv-table .item-img { width: 32px; height: 32px; }
   .inv-table-wrap { max-height: 520px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
 }
+
+/* ==========================================================
+   ADMIN POLISH (v6) — search + mobile horizontal rows
+   ========================================================== */
+
+/* Search input above the All bags grid — pill shape, magnifier icon */
+.admin-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 16px;
+}
+.admin-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.admin-search input[type="search"] {
+  flex: 1;
+  padding: 12px 18px 12px 46px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.admin-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.admin-search input[type="search"]:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,169,97,0.2);
+}
+.admin-search input[type="search"]::placeholder { color: var(--ink-faint); }
+.admin-search-meta {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Helper class used by the buyer row in admin cards */
+.admin-card-buyer { font-size: 12px; color: #666; margin-top: 4px; }
+
+/* MOBILE ≤600px — admin cards as horizontal list rows
+   Per CLAUDE.md admin-pattern: 78px thumb, single-line name+price,
+   nowrap actions, ~110px tall, hide category badge.                  */
+@media (max-width: 600px) {
+  .admin-list {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 2px; /* leave room for scrollbar */
+  }
+  .admin-card {
+    display: grid;
+    grid-template-columns: 78px 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    min-height: 110px;
+  }
+  /* 78×78 thumbnail — explicit dimensions; NEVER use height:100% (stretches) */
+  .admin-card img {
+    width: 78px;
+    height: 78px;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .admin-card-body { padding: 0; min-width: 0; }
+  .admin-card-name {
+    font-size: 14px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .admin-card-price { font-size: 13px; display: inline; }
+  /* Category badge + buyer line: hide on mobile to keep rows compact */
+  .admin-card-stock,
+  .admin-card-buyer { display: none; }
+  /* Action buttons: all in one row, no wrapping */
+  .admin-card-actions {
+    margin-top: 6px;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+  .admin-card-actions button {
+    padding: 6px 8px;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+  /* Bulk-select checkbox is fine where it is — just shrink the chrome */
+  .admin-card .bulk-check { top: 4px; left: 4px; padding: 2px; }
+  .admin-card .bulk-check input { width: 14px; height: 14px; }
+
+  .admin-search { gap: 8px; }
+  .admin-search input[type="search"] { font-size: 16px; padding: 10px 14px 10px 42px; }
+  .admin-search-icon { left: 14px; }
+  .admin-search-meta { font-size: 11.5px; min-width: 0; }
+}

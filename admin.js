@@ -732,13 +732,28 @@ document.getElementById('bulkCatSaveBtn').addEventListener('click', async () => 
 });
 
 // ==================== BAG LIST ====================
+let adminSearchQuery = '';
+
 function renderList() {
   const list = document.getElementById('adminList');
   document.getElementById('bagCount').textContent = bags.length;
   const nav = document.getElementById('navItemCount'); if (nav) nav.textContent = bags.length;
-  list.innerHTML = bags.map(b => {
+
+  const q = adminSearchQuery.trim().toLowerCase();
+  const filtered = q
+    ? bags.filter(b => (b.name || '').toLowerCase().includes(q) || (b.category || '').toLowerCase().includes(q))
+    : bags;
+
+  const meta = document.getElementById('adminSearchMeta');
+  if (meta) {
+    meta.textContent = q
+      ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'}`
+      : '';
+  }
+
+  list.innerHTML = filtered.map(b => {
     const buyer = b.soldTo?.name
-      ? `<div style="font-size:12px;color:#666;margin-top:4px;">Sold to ${escapeHtml(b.soldTo.name)}${b.soldTo.phone ? ' · ' + escapeHtml(b.soldTo.phone) : ''}</div>`
+      ? `<div class="admin-card-buyer">Sold to ${escapeHtml(b.soldTo.name)}${b.soldTo.phone ? ' · ' + escapeHtml(b.soldTo.phone) : ''}</div>`
       : '';
     return `
     <div class="admin-card ${bulkSelected.has(b.id) ? 'bulk-selected' : ''}">
@@ -751,13 +766,31 @@ function renderList() {
         ${buyer}
         <div class="admin-card-actions">
           <button onclick="editBag('${b.id}')">Edit</button>
-          <button class="sold-toggle ${b.sold ? 'on' : ''}" onclick="toggleSold('${b.id}')">${b.sold ? 'Unmark sold' : 'Mark sold'}</button>
+          <button class="sold-toggle ${b.sold ? 'on' : ''}" onclick="toggleSold('${b.id}')">${b.sold ? 'Unsell' : 'Sell'}</button>
           <button class="danger" onclick="deleteBag('${b.id}')">Delete</button>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  if (filtered.length === 0 && q) {
+    list.innerHTML = `<p style="grid-column:1/-1;padding:24px;text-align:center;color:var(--ink-faint);font-size:14px;">No bags match "${escapeHtml(adminSearchQuery)}".</p>`;
+  }
 }
+
+// Wire up search input — debounced 160ms, filters by name + category
+(function() {
+  const input = document.getElementById('adminSearchInput');
+  if (!input) return;
+  let timer;
+  input.addEventListener('input', e => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      adminSearchQuery = e.target.value;
+      renderList();
+    }, 160);
+  });
+})();
 
 function renderAll() {
   renderStats();

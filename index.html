@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 <!-- GHL external tracking — captures shoppers who visit this site -->
 <script src="https://link.essenceautomations.com/js/external-tracking.js" data-tracking-id="tk_d5a5c7952dc94771ba91855a4bfe3aea"></script>
 </head>
@@ -66,12 +66,29 @@
   <div class="container">
     <div class="filters-bar">
       <h2 class="section-title">The Collection</h2>
-      <div class="filter-pills">
-        <button class="pill active" data-filter="all">All</button>
-        <button class="pill" data-filter="available">Available</button>
-        <button class="pill" data-filter="sold">Sold</button>
+      <div class="filters-controls">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <input id="searchInput" type="search" placeholder="Search by name, description, or category…" autocomplete="off">
+          <button class="search-clear" id="searchClear" type="button" aria-label="Clear search" hidden>&times;</button>
+        </div>
+        <select id="sortSelect" class="sort-select" aria-label="Sort bags">
+          <option value="featured">Featured</option>
+          <option value="newest">Newest first</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+        </select>
       </div>
     </div>
+    <div class="filter-pills filter-pills--availability">
+      <button class="pill active" data-filter="all">All</button>
+      <button class="pill" data-filter="available">Available</button>
+      <button class="pill" data-filter="sold">Sold</button>
+    </div>
+    <div class="filter-pills filter-pills--cats" id="catPills"></div>
     <p class="filter-meta" id="filterMeta"></p>
   </div>
 </section>
@@ -119,6 +136,6 @@
   <div class="lightbox-caption" id="lightboxCaption"></div>
 </div>
 
-<script src="main.js?v=3"></script>
+<script src="main.js?v=6"></script>
 </body>
 </html>

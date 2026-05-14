@@ -1,133 +1,73 @@
-# ThriftLux audit — against catalog standards in CLAUDE.md
+# ThriftLux audit — against `Website Designs/CATALOG-STANDARDS.md`
 
-Date: 2026-05-09
-Reference: `~/.claude/CLAUDE.md` "Catalog site standard feature set", "Admin panel standard pattern", "WhatsApp Marketing", "Analytics", "Worker endpoint conventions", "Catalog data model — thrift vs new-stock", and `Website Designs/ryker-luxury/` as the reference implementation.
+Date: 2026-05-12.
+Scope: thrift-only. New-stock rules (per-size stock grid, "Only N left" badge, size-required Enquire, size guide modal, Roman-numeral dedup, "One Size" hiding, "Sold out — notify me" semantics) are explicitly skipped per the thrift exclusion in CATALOG-STANDARDS.md "Catalog data model — thrift vs new-stock".
 
-ThriftLux is a **thrift store** (each bag is one-of-one), so the data model is `sold: boolean`, no stock grid, no restock, no "Only N left", no size guide, no "back in stock" broadcasts. Everything else from the standard should land.
+## Status table
 
----
+| Standard (thrift-relevant only) | Status | Action |
+|---|---|---|
+| **Animation: fade-in-up on scroll** (hero auto + cards paused→.in-view, IO re-observed after render) | ✗ missing | Phase 3 |
+| **Hero** (eyebrow + serif w/ italic accent + 2 CTAs) | ✓ done | — |
+| **Availability filter pills** (All / Available / Sold) | ✓ done | — |
+| **Category filter pills** (wrap on mobile, not horizontal-scroll) | ✗ missing | Phase 1 |
+| **Public search input** (debounced ~180ms, name+desc+category, × clear) | ✗ missing | **Phase 1 — ship now** |
+| **Sort dropdown** (Featured / Newest / Price ↑ / Price ↓) | ✗ missing | **Phase 1 — ship now** |
+| **NEW badge** (gold ribbon, 7-day window, needs `createdAt`) | ✗ missing | **Phase 1 — ship now** |
+| **Wishlist** (heart, localStorage, drawer, bundled WA Enquire) | ✗ missing | Phase 3 |
+| **Multi-image carousels on cards** | ✗ missing | Phase 3 |
+| **Enquire WA message includes image URL on its own line** (so WA shows preview card) | ✗ missing | **Phase 1 — CRITICAL ship now** |
+| **"View on IG" button on each card** | partial — labelled "360° View" | rename in Phase 1 |
+| **Pagination 15/page** | ✗ missing (24 bags fit; not urgent) | Phase 3 |
+| **Embedded Google Map** for Nairobi CBD drop-off | ✗ missing | Phase 3 |
+| **Price-on-request** when price=0 | partial — admin requires price | Phase 2 |
+| **Admin sticky sub-nav** with count badges | ✓ done | — |
+| **"All items" at the BOTTOM** of admin | ✓ done | — |
+| **Admin search above All items** (160ms debounce, "N matches") | ✓ done (shipped commit 941b294) | — |
+| **Mobile admin rows** (78×78 thumb, 110px height, single-line) | ✓ done (shipped commit 941b294) | — |
+| **Single-word action labels** (Edit / Sell / Delete) | ✓ done (shipped commit 941b294) | — |
+| **Sales dashboard** (KPI + top cats + recent sales) | ✓ done | — |
+| **Inventory dashboard** (thrift-adapted KPIs + filterable table) | ✓ done | — |
+| **WhatsApp Marketing** (recipients dedup, 700ms tabs, copy fallback, "Hi {Firstname}!") | ✓ done | — |
+| **Bulk actions** (checkbox + sticky bar) | ✓ done | — |
+| **Login form polish** (440px, 16px padding/font) | ✓ done | — |
+| **Insights section** (NOT "Analytics" — locked rule) with "(This device only)" badge | ✗ section removed entirely; needs to come back as Insights | **Phase 1 — ship now** |
+| **searchNoResults tracking + "Searches with no results" warm-amber pills card** ⭐ killer feature | ✗ missing | **Phase 1 — ship now** |
+| **Edit-mode UX**: hide IG quick-add + manual-entry divider, scroll to `#formTitle` with `auto` not `smooth` | ✗ missing | **Phase 1 — ship now** |
+| **Long-list custom scrollbar** (gold thumb, surface track) | ✗ missing | **Phase 1 — ship now** |
+| **IG quick-add: "⚡ FASTEST WAY" pill + 4px gold-deep left bar** | partial — currently "RECOMMENDED" pill | **Phase 1 — rename** |
+| **Worker `/api/ig-fetch?url=`** | ✗ missing — admin panel falls back to friendly error | Phase 2 |
+| **Worker `/api/ig-proxy?url=`** (CORS bypass for IG CDN images) | ✗ missing | Phase 2 |
+| **Hosting on CF Pages, no `CNAME` file in repo** | partial — repo HAS a CNAME file (mutually incompatible with CF Pages custom domain) | **Phase 1 — remove now** |
+| **Mobile nav overlay z-index** (nav 200, .nav-mobile 210) | needs check | Phase 2 |
+| **Full OG meta set** (og:image:secure_url, type, locale, twitter:card, canonical) | partial | Phase 3 |
 
-## Public site (`index.html` + `main.js`)
+## What I'm shipping in this pass (Phase 1)
 
-| Feature                                  | Status        | Notes |
-|------------------------------------------|---------------|-------|
-| Hero (eyebrow + serif title + italic accent + subhead + 2 CTAs) | ✓ done        | |
-| Availability filter pills (All / Available / Sold) | ✓ done        | |
-| Branch pills                             | n/a           | Single seller, single branch (CBD) |
-| Category pills                           | ✗ missing     | Need categories: Crossbody, Shoulder, Tote, Hobo, Clutch, Bucket, Top-Handle |
-| Search input (debounced ~180ms, name+desc+category, × clear) | ✗ missing     | |
-| Sort dropdown (Featured / Newest / Price ↑ / Price ↓) | ✗ missing     | Needs `createdAt` on each bag |
-| NEW badge (gold ribbon, last 7 days)     | ✗ missing     | Needs `createdAt` |
-| One-of-one badge (replaces "Only N left")| ✗ missing     | Subtle "1 of 1" or no badge — thrift implicit |
-| Sold badge                                | ✓ done        | |
-| Wishlist (♥ icon, localStorage, drawer, bundled WhatsApp enquiry) | ✗ missing     | |
-| Multi-image carousels (per-bag `images: []`, dot indicators, swipe) | ✗ missing     | Each bag in IG often has multiple angles |
-| Lightbox                                  | ✓ done        | |
-| "View on IG" button                      | partial       | Currently labelled "360° View" — fine, but should add IG icon |
-| WhatsApp Enquire button (pre-filled)     | ✓ done        | |
-| Pagination (15 / page, numbered, ellipsis) | n/a           | Only 24 bags; not needed yet. Add when catalogue >40 |
-| Size guide modal                          | n/a           | Bags don't have sizes |
-| Embedded Google map (CBD drop-off)       | ✗ missing     | CLAUDE.md flags this as mandatory for physical-shop clients |
-| OG / social sharing meta tags (full set) | partial       | Have basic OG, missing `og:image:secure_url`, `og:image:alt`, `twitter:card`, `og:locale`, canonical link |
-| Mobile single-row scrolling pills        | partial       | Filter pills wrap; should single-row scroll on mobile |
-| Per-browser analytics (lightbox opens, enquiries, wishlist adds, IG clicks) | ✗ missing     | |
+1. **WA Enquire message includes image URL** on its own line (so WhatsApp generates the preview card)
+2. **Remove `CNAME` file** from repo root (CF Pages incompatibility per gotcha)
+3. **Bring back Insights section** (renamed from Analytics per locked rule) with "(This device only)" badge
+4. **searchNoResults tracking** in public site + "Searches with no results" warm-amber pills card in admin Insights
+5. **Public search input** (debounced 180ms, name+desc+category, × clear button) with no-results tracking wired
+6. **Sort dropdown** (Featured / Newest / Price low→high / Price high→low)
+7. **NEW badge** (gold ribbon top-left, last 7 days, `createdAt`-driven)
+8. **Category filter pills** (alongside Availability), wrapping on mobile
+9. **"View on IG" rename** (was "360° View") with IG icon
+10. **Admin edit-mode UX**: hide IG quick-add + divider on enter-edit, scroll to `#formTitle` with `auto`
+11. **Long-list scrollbar styling** (gold thumb on surface track) for admin lists
+12. **IG quick-add pill** renamed from "RECOMMENDED" → "⚡ FASTEST WAY" with 4px gold-deep left bar
 
----
+## Phase 2 (next pass)
 
-## Admin (`admin.html` + `admin.js`)
+- Worker `/api/ig-fetch` and `/api/ig-proxy` endpoints (currently the admin panel shows a graceful "endpoint not deployed yet" message)
+- Price-on-request handling (admin allows blank price → stored as 0 → public shows "Price on request" italic)
+- Mobile nav overlay z-index verification
 
-| Feature                                  | Status        | Notes |
-|------------------------------------------|---------------|-------|
-| Login form polish (≥440px wide, 16px input padding, 16px font, 0.06em letter-spacing) | ✓ done in this pass | |
-| Sticky sub-nav with count badges          | ✓ done in this pass | + Add new · Sales · Inventory · WhatsApp Marketing · Analytics · All bags |
-| `+ Add new bag` gold-CTA in nav           | ✓ done in this pass | |
-| Sales dashboard (Today/Week/Month/All-time KPI + Top categories + Recent sales) | ✓ done in this pass | KPI cards were already on remote; this pass added Top categories + Recent sales |
-| Inventory dashboard adapted for thrift    | ✓ done in this pass | KPIs: Total / Sold / Total revenue / Avg sale price. No low-stock. Filterable table (All / Available / Sold) |
-| WhatsApp Marketing (subject, item picker, recipient toggles, sequenced WA Web tabs, copy fallback) | ✓ done in this pass | Adapted copy: "new drops, not back in stock" |
-| Analytics dashboard (localStorage events + Most viewed / Most enquired) | partial | Dashboard UI is live; the public-side event emitter is pending |
-| IG quick-add (URL → fetch caption + image via Worker `/api/ig-fetch`) | partial | UI is live in admin form; falls back to friendly message until worker endpoint ships |
-| Add/edit form: main image upload          | ✓ done        | Uploads via worker `/api/image` already wired |
-| Add/edit form: additional images (up to 8 with previews + remove) | ✓ done in this pass | Mixes existing URL strings + new staged uploads when editing |
-| Add/edit form: category dropdown          | ✓ done in this pass | 10 thrift-relevant categories |
-| Add/edit form: Instagram URL field        | ✓ done        | `reel` field; mirrored to `instagramUrl` for standard alignment |
-| Add/edit form: stock grid                 | n/a — thrift  | Each bag is 1 of 1 |
-| Add/edit form: branch dropdown            | n/a           | Single shop |
-| Bulk actions (checkbox + sticky bar: Set category / Mark sold / Mark available / Delete / Clear) | ✓ done in this pass | |
-| Mark-as-sold flow + buyer capture modal   | ✓ done        | Already on remote: name + phone + notes + reCAPTCHA + GHL proxy. Buyer info now also drives WhatsApp Marketing recipients list. |
-| Restock modal                              | n/a — thrift  | One of one |
-| Connected to backend (Worker + KV)        | ✓ done        | `https://thriftlux-api.stawisystems.workers.dev` — bulk publish, image upload, GHL buyer proxy all live |
+## Phase 3 (later)
 
----
-
-## Data model
-
-Current `data.json` schema:
-```json
-{
-  "id": "DYDQo8Pt0xH",
-  "name": "...",
-  "description": "...",
-  "price": 1500,
-  "sold": true,
-  "image": "images/bags/reel_DYDQo8Pt0xH.jpg",
-  "reel": "https://www.instagram.com/reel/.../"
-}
-```
-
-Target thrift schema (backward compatible):
-```json
-{
-  "id": "DYDQo8Pt0xH",
-  "name": "...",
-  "description": "...",
-  "category": "Bucket",                              // NEW: filter & analytics
-  "price": 1500,
-  "sold": true,
-  "image": "images/bags/reel_DYDQo8Pt0xH.jpg",
-  "images": ["images/bags/.../front.jpg", "..."],    // NEW: optional, multi-angle
-  "reel": "https://www.instagram.com/reel/.../",     // keep
-  "instagramUrl": "https://...",                      // NEW alias for consistency
-  "createdAt": "2026-05-08T13:00:00Z",                // NEW: NEW-badge + sort
-  "sales": [                                          // NEW: drives Sales + Marketing dashboards
-    {
-      "salePrice": 1500,
-      "buyerName": "Brian Kamau",
-      "buyerPhone": "254712345678",
-      "notes": "delivered to Westlands",
-      "soldAt": "2026-05-09T08:30:00Z"
-    }
-  ]
-}
-```
-
-For thrift: `sales` is always length 0 or 1. The `sold: true` flag stays as the canonical sold marker (cheap to filter on). When the toggle is flipped, optionally record a sale entry; when un-flipped, drop it.
-
----
-
-## Worker / API
-
-| Endpoint                  | Status      | Notes |
-|---------------------------|-------------|-------|
-| `GET /api/bags`           | ✓ deployed    | Frontend reads from here, not from `data.json` |
-| `GET /api/health`         | ✓ deployed    | |
-| `POST /api/bulk` (auth)   | ✓ deployed    | |
-| `POST /api/image` (auth)  | ✓ deployed    | Base64 → KV. Returns `/img/<file>`. Bags reference these absolute URLs in `image` and `images[]`. |
-| `GET /img/<file>`         | ✓ deployed    | |
-| `POST /api/buyer`         | ✓ deployed    | Proxies buyer capture to GHL form endpoint with reCAPTCHA Enterprise token. |
-| `GET /api/ig-fetch?url=`  | ✗ missing     | UI is wired in this pass; needs worker route. Pattern: /embed/captioned/ scrape returning `{ imageUrl, caption, postUrl }`. |
-| Wrangler secret `ADMIN_TOKEN` | ✓ set     | Encoded in admin.js for the live Worker. |
-
----
-
-## What I shipped in this pass
-
-1. **Audit doc** (this file).
-2. **Admin rebuild on top of the live API** — sticky sub-nav, Top categories + Recent sales added to the existing Sales Overview, new Inventory / WhatsApp Marketing / Analytics dashboards, IG quick-add panel, bulk actions, login form polish, multi-image upload, category dropdown. **Preserved** the existing buyer capture modal, GHL/reCAPTCHA proxy, and Worker-backed image upload + bulk publish.
-3. **No stock grid, no restock modal, no "Only N left", no size guide** — explicitly skipped per thrift model.
-4. **Backward-compatible data model** — `category`, `images: []`, `instagramUrl`, `createdAt` backfilled on load; existing bags with `soldTo` keep working.
-
-## What stays for a follow-up pass
-
-- **Public-side**: search input · sort dropdown · NEW badge · wishlist · multi-image carousels · embedded map · per-browser analytics tracking · full OG meta set.
-- **Worker `/api/ig-fetch`** route so the IG quick-add panel actually works (UI is already wired with graceful failure).
-- **Public-site analytics emitter** writing to `localStorage.thriftlux_analytics` so the admin Analytics dashboard shows real visitor data, not just owner browsing.
+- Fade-in-up animation standard (hero auto + cards paused→.in-view IO + accessibility floor)
+- Wishlist (heart + localStorage + drawer + bundled WA)
+- Multi-image carousels on cards
+- Pagination 15/page (not urgent — 24 bags fits)
+- Embedded Google Map for Nairobi CBD drop-off
+- Full OG meta tag set

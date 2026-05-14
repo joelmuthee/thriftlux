@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0d0d0d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 <!-- GHL form submit captcha (enterprise reCAPTCHA v3) -->
 <script src="https://www.google.com/recaptcha/enterprise.js?render=6LeDBFwpAAAAAJe8ux9-imrqZ2ueRsEtdiWoDDpX" async defer></script>
 </head>
@@ -44,6 +44,7 @@
     <a href="#salesDash">Sales</a>
     <a href="#invDash">Inventory</a>
     <a href="#broadcastDash">WhatsApp Marketing</a>
+    <a href="#insightsDash">Insights</a>
     <a href="#allItems">All bags <span class="admin-nav-count" id="navItemCount"></span></a>
   </nav>
 
@@ -145,15 +146,44 @@
     </div>
   </section>
 
+  <!-- ====== INSIGHTS (per-browser, NOT 'Analytics' — locked rule in CATALOG-STANDARDS.md) ====== -->
+  <section class="dash" id="insightsDash">
+    <h2 class="dash-title">Insights <span class="insights-badge">This device only</span></h2>
+    <p class="insights-disclosure">
+      What's being viewed and tapped on the public store, tracked in this browser's <code>localStorage</code>. The numbers are honest but per-device — they reflect activity captured on whichever browsers visitors used (yours included). For visitor-wide stats, plug in Cloudflare Web Analytics (free, one-line beacon).
+    </p>
+    <div class="inv-kpi-grid" id="insightsKpiGrid"></div>
+    <div class="dash-grid" style="margin-top:18px;">
+      <div class="dash-card">
+        <h3>Most viewed bags</h3>
+        <div id="insightsTopViews" class="recent-list"></div>
+      </div>
+      <div class="dash-card">
+        <h3>Most enquired about</h3>
+        <div id="insightsTopEnquiries" class="recent-list"></div>
+      </div>
+    </div>
+    <!-- The killer feature: searches that returned no results = unmet demand -->
+    <div class="search-gaps" id="searchGapsCard">
+      <h4>⭐ Searches with no results</h4>
+      <p class="search-gaps-hint">What shoppers typed in the search bar that returned nothing. Strong signal for what to source next.</p>
+      <div class="search-gaps-pills" id="searchGapsPills"></div>
+    </div>
+    <div class="insights-actions">
+      <button class="btn-admin danger" id="insightsResetBtn">Reset insights on this device</button>
+    </div>
+  </section>
+
   <!-- ====== ADD / EDIT FORM ====== -->
   <div class="admin-form" id="addForm">
     <h2 id="formTitle">Add a new bag</h2>
     <input type="hidden" id="editingId">
 
-    <!-- IG quick-add — the recommended path. Highlighted to be unmissable. -->
-    <div class="field ig-quick-add">
+    <!-- IG quick-add — the recommended path. Highlighted to be unmissable.
+         #igQuickPanel + #manualEntryDivider are hidden by editBag() in edit-mode. -->
+    <div class="field ig-quick-add" id="igQuickPanel">
       <div class="ig-quick-head">
-        <span class="ig-quick-badge">RECOMMENDED</span>
+        <span class="ig-quick-badge">⚡ FASTEST WAY</span>
         <h3>Add from Instagram</h3>
       </div>
       <p class="ig-quick-desc">
@@ -166,7 +196,7 @@
       <p id="igQuickStatus" class="ig-quick-status"></p>
     </div>
 
-    <div class="form-or-divider"><span>or upload manually below ↓</span></div>
+    <div class="form-or-divider" id="manualEntryDivider"><span>or upload manually below ↓</span></div>
 
     <div class="field">
       <label>Main image</label>
@@ -319,6 +349,6 @@
   </div>
 </div>
 
-<script src="admin.js?v=6"></script>
+<script src="admin.js?v=7"></script>
 </body>
 </html>

@@ -325,6 +325,11 @@ function resetForm() {
   document.getElementById('igQuickStatus').textContent = '';
   formTitle.textContent = 'Add a new bag';
   cancelBtn.style.display = 'none';
+  // Restore IG quick-add panel + manual divider that editBag() hid
+  const igPanel = document.getElementById('igQuickPanel');
+  const manualDiv = document.getElementById('manualEntryDivider');
+  if (igPanel) igPanel.style.display = '';
+  if (manualDiv) manualDiv.style.display = '';
 }
 
 function editBag(id) {
@@ -338,12 +343,21 @@ function editBag(id) {
   soldInput.checked = !!bag.sold;
   stagedImage = null;
   imagePreview.innerHTML = `<img src="${bag.image}" style="max-width:200px;border-radius:8px;">`;
-  // existing images are kept as URL strings; new uploads layer on top
-  stagedExtras = (bag.images || []).slice().map(url => url); // strings, not objects
+  stagedExtras = (bag.images || []).slice().map(url => url);
   renderExtrasForEdit(stagedExtras);
   formTitle.textContent = 'Edit bag';
   cancelBtn.style.display = 'inline-block';
-  document.getElementById('addForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Edit-mode UX (CATALOG-STANDARDS.md): hide the IG quick-add panel + the
+  // "or upload manually below" divider — they're confusing during edit. Then
+  // scroll to the form heading (NOT the form container, which lands on the
+  // hidden IG panel anyway). Use `auto` not `smooth` — smooth scrolling
+  // across a long admin page reads as lag.
+  const igPanel = document.getElementById('igQuickPanel');
+  const manualDiv = document.getElementById('manualEntryDivider');
+  if (igPanel) igPanel.style.display = 'none';
+  if (manualDiv) manualDiv.style.display = 'none';
+  document.getElementById('formTitle').scrollIntoView({ behavior: 'auto', block: 'start' });
 }
 
 // While editing, mix existing URL strings with new staged uploads.
@@ -792,10 +806,71 @@ function renderList() {
   });
 })();
 
+// ==================== INSIGHTS (per-browser localStorage) ====================
+const INSIGHTS_KEY = 'thriftlux_analytics';
+function getInsights() {
+  try { return JSON.parse(localStorage.getItem(INSIGHTS_KEY) || '{}'); } catch { return {}; }
+}
+function renderInsights() {
+  const a = getInsights();
+  const views = a.itemViews || {};
+  const enqs = a.itemEnquiries || {};
+  const igClicks = a.itemIgClicks || {};
+  const wishlist = a.itemWishlist || {};
+  const searchNoResults = a.searchNoResults || {};
+
+  // KPI labels = actions, never visitors. Preserves the per-device truth.
+  const sum = m => Object.values(m).reduce((s, n) => s + (n || 0), 0);
+  document.getElementById('insightsKpiGrid').innerHTML = `
+    <div class="inv-kpi"><div class="inv-kpi-label">Item views</div><div class="inv-kpi-val">${sum(views)}</div></div>
+    <div class="inv-kpi"><div class="inv-kpi-label">Enquiries</div><div class="inv-kpi-val">${sum(enqs)}</div></div>
+    <div class="inv-kpi"><div class="inv-kpi-label">Saved</div><div class="inv-kpi-val">${sum(wishlist)}</div></div>
+    <div class="inv-kpi"><div class="inv-kpi-label">IG clicks</div><div class="inv-kpi-val">${sum(igClicks)}</div></div>
+  `;
+
+  function topList(map, limit = 6) {
+    const rows = Object.entries(map)
+      .map(([id, n]) => ({ b: bags.find(b => b.id === id), n }))
+      .filter(r => r.b)
+      .sort((a, b) => b.n - a.n)
+      .slice(0, limit);
+    return rows.length
+      ? rows.map(({ b, n }) => `
+          <div class="recent-row">
+            <img src="${b.image}" alt="">
+            <div style="flex:1;min-width:0;"><div class="recent-name">${escapeHtml(b.name)}</div><div class="recent-meta">${n} ${n === 1 ? 'time' : 'times'}</div></div>
+          </div>`).join('')
+      : '<p class="insights-empty">No data yet on this device.</p>';
+  }
+  document.getElementById('insightsTopViews').innerHTML = topList(views);
+  document.getElementById('insightsTopEnquiries').innerHTML = topList(enqs);
+
+  // ⭐ The killer feature: searches that returned nothing = unmet demand
+  const gaps = Object.entries(searchNoResults).sort((a, b) => b[1] - a[1]).slice(0, 30);
+  const pillsEl = document.getElementById('searchGapsPills');
+  if (gaps.length) {
+    pillsEl.innerHTML = gaps.map(([q, n]) =>
+      `<span class="search-gap-pill">${escapeHtml(q)}<span class="count">${n}</span></span>`
+    ).join('');
+  } else {
+    pillsEl.innerHTML = '<p class="insights-empty" style="margin:0;">No empty searches recorded on this device. Once visitors search for something the catalogue doesn\'t have, it shows up here as a sourcing hint.</p>';
+  }
+}
+const insightsResetBtn = document.getElementById('insightsResetBtn');
+if (insightsResetBtn) {
+  insightsResetBtn.addEventListener('click', () => {
+    if (!confirm('Clear insights on this device only? Other devices keep their data.')) return;
+    localStorage.removeItem(INSIGHTS_KEY);
+    renderInsights();
+    showToast('Insights reset on this device.');
+  });
+}
+
 function renderAll() {
   renderStats();
   renderInventory();
   renderBroadcast();
+  renderInsights();
   renderList();
 }
 

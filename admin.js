@@ -179,25 +179,64 @@ function renderExtras() {
   });
 }
 
+// Extract the shortcode from an IG URL (reel/p/tv all use the same slug shape).
+function igShortcode(url) {
+  const m = (url || '').match(/\/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+function findBagByShortcode(code) {
+  if (!code) return null;
+  return bags.find(b => {
+    const r = (b.reel || b.instagramUrl || '');
+    return r.includes('/' + code);
+  }) || null;
+}
+
 // IG quick-add — uses the worker's /api/ig-fetch when available. Fails politely otherwise.
+// If the pasted post already exists in the catalogue (same shortcode), switch into
+// edit mode for that bag rather than creating a duplicate. The new photo overlays
+// the existing one on save; other fields stay as the admin already set them.
 document.getElementById('igQuickBtn').addEventListener('click', async () => {
   const url = document.getElementById('igQuickInput').value.trim();
   const status = document.getElementById('igQuickStatus');
   if (!url) { status.className = 'ig-quick-status err'; status.textContent = 'Paste an Instagram URL first.'; return; }
   status.className = 'ig-quick-status'; status.textContent = 'Fetching…';
+  const existing = findBagByShortcode(igShortcode(url));
   try {
     const r = await fetch(`${API_BASE}/api/ig-fetch?url=${encodeURIComponent(url)}`);
     if (!r.ok) throw new Error('endpoint not deployed yet');
     const data = await r.json();
+
+    // Stage the new image (we always want it, whether new bag or update).
+    let newStaged = null;
     if (data.imageUrl) {
       const imgRes = await fetch(data.imageUrl);
       const blob = await imgRes.blob();
       const ext = (blob.type.split('/')[1] || 'jpg').toLowerCase();
       const r2 = new FileReader();
-      stagedImage = await new Promise(resolve => {
+      newStaged = await new Promise(resolve => {
         r2.onload = () => resolve({ base64: r2.result.split(',')[1], ext, dataUrl: r2.result });
         r2.readAsDataURL(blob);
       });
+    }
+
+    if (existing) {
+      // Update-in-place path: switch into edit mode for the existing bag.
+      // editBag() fills the form with existing values and hides the IG panel,
+      // so we overlay the staged photo afterwards. Status moves to toast since
+      // the panel itself is now hidden.
+      editBag(existing.id);
+      if (newStaged) {
+        stagedImage = newStaged;
+        imagePreview.innerHTML = `<img src="${stagedImage.dataUrl}" style="max-width:200px;border-radius:8px;">`;
+      }
+      showToast(`Existing bag found — editing "${existing.name}". Save to apply the new photo.`);
+      return;
+    }
+
+    // New-bag path: existing behaviour.
+    if (newStaged) {
+      stagedImage = newStaged;
       imagePreview.innerHTML = `<img src="${stagedImage.dataUrl}" style="max-width:200px;border-radius:8px;">`;
     }
     if (data.caption) {
@@ -291,6 +330,21 @@ async function saveBag() {
       showToast('Bag updated and live!');
     } else {
       if (!stagedImage) { showToast('Add a bag image.'); setSaving(false); return; }
+      // Dupe-by-shortcode guard: if the reel URL belongs to a bag already in
+      // the catalogue, refuse rather than silently duplicating. IG quick-add
+      // handles this proactively; this is the safety net for the manual path.
+      const code = igShortcode(reel);
+      if (code) {
+        const dup = bags.find(b => {
+          const r = (b.reel || b.instagramUrl || '');
+          return r.includes('/' + code);
+        });
+        if (dup) {
+          showToast(`Already in catalogue as "${dup.name}". Click Edit on that bag instead.`);
+          setSaving(false);
+          return;
+        }
+      }
       const id = 'bag_' + Date.now();
       const bag = {
         id, name, description: desc, category, price,

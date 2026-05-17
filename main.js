@@ -147,7 +147,7 @@ const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by a
     gallery.innerHTML = filtered.map(bag => {
       const igUrl = bag.instagramUrl || bag.reel || '';
       const priceLine = (bag.price > 0)
-        ? `<span class="card-price">${fmtPrice(bag.price)} <small>· drop-off CBD</small></span>`
+        ? `<span class="card-price">${fmtPrice(bag.price)}</span>`
         : `<span class="card-price"><small style="font-style:italic;font-weight:400;">Price on request</small></span>`;
       const enquireLabel = bag.sold
         ? 'Sold out'

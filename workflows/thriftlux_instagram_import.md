@@ -29,6 +29,20 @@
 
 ---
 
+## Rule: one IG post per physical bag
+
+Each physical bag should appear in IG **once**. If Venessa wants a better photo on the catalogue, the workflow is:
+
+1. Open admin → click **Edit** on the bag.
+2. Use the **Main image** picker (top of the form) to upload the new photo.
+3. Save.
+
+**Do not** post the same bag to IG a second time and re-import it. Each IG post has a unique shortcode, so a second import creates a brand-new listing with a new id — the public site then shows the bag twice. The IG quick-add dedupes by shortcode (same post), not by physical bag, so it can't catch this for you.
+
+If a duplicate slips through anyway, delete the older listing via admin → **Delete**, or by editing `data.json` and re-syncing KV.
+
+---
+
 ## What does NOT work (skip these)
 
 - **Apify `instagram-reel-scraper`** — returns CDN URLs that the VM can't fetch (network block).

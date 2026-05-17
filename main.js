@@ -1,5 +1,5 @@
 // ThriftLux frontend gallery
-const IMG_VERSION = 'v6'; // bump this whenever you re-crop/replace bag images
+const IMG_VERSION = 'v7'; // bump this whenever you re-crop/replace bag images
 const API_BASE = 'https://thriftlux-api.stawisystems.workers.dev';
 const NEW_BADGE_DAYS = 7;
 const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by admin Insights

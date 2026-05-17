@@ -2,7 +2,7 @@
 
 **Objective:** Download new reel thumbnails and captions from Venessa's Instagram, add them to `data.json`, and crop them to look great in the website grid.
 
-**Last run:** 2026-05-09
+**Last run:** 2026-05-17
 
 ---
 
@@ -10,11 +10,11 @@
 
 | Field | Value |
 |---|---|
-| Last run date | 2026-05-09 |
-| Most recent reel imported | `DYDQo8Pt0xH` (Black Leather Embroidered Horses Mini Roy Bucket Bag, posted 2026-05-08) |
-| Total bags in `data.json` | 24 |
+| Last run date | 2026-05-17 |
+| Most recent reel imported | `DYVFsjwtb5g` (Camel Kelly-Style Pebbled Leather Top Handle Bag) |
+| Total bags in `data.json` | 45 |
 
-**How to use the checkpoint:** Reels grid shows newest first. On the next run, scroll the grid until the checkpoint shortcode (`DYDQo8Pt0xH`) is visible, then run the Step 2 script with `STOP_AT` set to the checkpoint. Only newer reels will be collected.
+**How to use the checkpoint:** Reels grid shows newest first. On the next run, scroll the grid until the checkpoint shortcode (`DYVFsjwtb5g`) is visible, then run the Step 2 script with `STOP_AT` set to the checkpoint. Only newer reels will be collected.
 
 ---
 
@@ -23,7 +23,7 @@
 | Input | Value |
 |---|---|
 | Instagram profile URL | `https://www.instagram.com/thriftlux.ke/reels/` |
-| Stop-at shortcode (last imported) | `DYDQo8Pt0xH` |
+| Stop-at shortcode (last imported) | `DYVFsjwtb5g` |
 | Project root | `C:\Users\Joel\Website Designs\thriftlux-ke` |
 | Backup of originals | `.tmp/bags_original/` |
 

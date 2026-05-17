@@ -245,7 +245,7 @@ const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by a
     if (a.dataset.action === 'ig-click') track('itemIgClicks', id);
   });
 
-  // ----- Like pill: tap to add +1 (persists in localStorage, one-way) -----
+  // ----- Like pill: tap to toggle (persists in localStorage) -----
   // Registered before the zoom handler so we can stopImmediatePropagation and
   // keep the lightbox from also firing when the user taps the heart inside the
   // card image wrap.
@@ -256,13 +256,17 @@ const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by a
     e.stopImmediatePropagation();
     const id = btn.dataset.id;
     const liked = getLikedSet();
-    if (liked.has(id)) return;
-    liked.add(id);
+    if (liked.has(id)) {
+      liked.delete(id);
+      btn.classList.remove('liked');
+    } else {
+      liked.add(id);
+      btn.classList.add('liked', 'pop');
+      setTimeout(() => btn.classList.remove('pop'), 350);
+    }
     saveLikedSet(liked);
-    btn.classList.add('liked', 'pop');
     const countEl = btn.querySelector('.like-count');
     if (countEl) countEl.textContent = bagLikeCount(id);
-    setTimeout(() => btn.classList.remove('pop'), 350);
   });
 
   // ----- Lightbox -----

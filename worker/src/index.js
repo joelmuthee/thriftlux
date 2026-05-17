@@ -116,6 +116,11 @@ export default {
       let body;
       try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
       if (!Array.isArray(body.bags)) return json({ error: "bags must be array" }, 400);
+      // Guardrail: empty array wipes the catalogue. Require explicit force:true
+      // so a stray test call can't nuke production.
+      if (body.bags.length === 0 && body.force !== true) {
+        return json({ error: "refusing to publish empty catalogue without force:true" }, 400);
+      }
       await env.BAGS.put("data", JSON.stringify({ bags: body.bags, settings: body.settings || {} }));
       return json({ ok: true, count: body.bags.length });
     }

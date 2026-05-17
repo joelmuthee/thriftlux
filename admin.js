@@ -396,7 +396,14 @@ function editBag(id) {
   categoryInput.value = bag.category || '';
   soldInput.checked = !!bag.sold;
   stagedImage = null;
-  imagePreview.innerHTML = `<img src="${bag.image}" style="max-width:200px;border-radius:8px;">`;
+  // Edit mode: label the existing cover so it's obvious which picker replaces it.
+  // Without this, admins occasionally drop the new photo into the "Additional images"
+  // field below and the cover never updates.
+  imagePreview.innerHTML = `
+    <div style="font-size:12px;font-weight:600;color:var(--brand,#b8860b);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px;">Current cover photo</div>
+    <img src="${bag.image}" style="max-width:200px;border-radius:8px;display:block;">
+    <div style="font-size:12px;color:#666;margin-top:6px;">To replace it, use the <strong>Main image</strong> file picker directly above. The <em>Additional images</em> field below is for extra angles only.</div>
+  `;
   stagedExtras = (bag.images || []).slice().map(url => url);
   renderExtrasForEdit(stagedExtras);
   formTitle.textContent = 'Edit bag';

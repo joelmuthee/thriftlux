@@ -40,6 +40,24 @@ const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by a
     return age >= 0 && age < NEW_BADGE_DAYS * 86400000;
   }
 
+  // ----- Likes (per-bag deterministic base + per-visitor +1 stored locally) -----
+  const LIKES_KEY = 'thriftlux_likes';
+  function bagBaseLikes(id) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+    return 7 + Math.abs(h) % 14; // 7..20 inclusive
+  }
+  function getLikedSet() {
+    try { return new Set(JSON.parse(localStorage.getItem(LIKES_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function saveLikedSet(set) {
+    try { localStorage.setItem(LIKES_KEY, JSON.stringify(Array.from(set))); } catch {}
+  }
+  function bagLikeCount(id) {
+    return bagBaseLikes(id) + (getLikedSet().has(id) ? 1 : 0);
+  }
+
   // ----- Insights tracking (per-browser, localStorage) -----
   // Five metrics per CATALOG-STANDARDS.md "Insights" rules.
   function track(metric, key) {
@@ -158,6 +176,10 @@ const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by a
           <img class="card-img" src="${bag.image}?${IMG_VERSION}" alt="${escapeHtml(bag.name)}" loading="lazy">
           ${bag.sold ? '<span class="badge-sold">Sold</span>' : ''}
           ${!bag.sold && isNew(bag) ? '<span class="badge-new">NEW</span>' : ''}
+          <button type="button" class="like-pill ${getLikedSet().has(bag.id) ? 'liked' : ''}" data-action="like" data-id="${bag.id}" aria-label="Like this bag">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 21s-7.5-4.5-9.5-9.5C1 7.5 4 4 7.5 4c2 0 3.5 1.2 4.5 3 1-1.8 2.5-3 4.5-3C20 4 23 7.5 21.5 11.5 19.5 16.5 12 21 12 21z"/></svg>
+          <span class="like-count">${bagLikeCount(bag.id)}</span>
+          </button>
         </div>
         <div class="card-body">
           <h3 class="card-title">${escapeHtml(bag.name)}</h3>
@@ -221,6 +243,26 @@ const INSIGHTS_KEY = 'thriftlux_analytics'; // localStorage bucket consumed by a
     const id = a.dataset.id;
     if (a.dataset.action === 'enquire') track('itemEnquiries', id);
     if (a.dataset.action === 'ig-click') track('itemIgClicks', id);
+  });
+
+  // ----- Like pill: tap to add +1 (persists in localStorage, one-way) -----
+  // Registered before the zoom handler so we can stopImmediatePropagation and
+  // keep the lightbox from also firing when the user taps the heart inside the
+  // card image wrap.
+  gallery.addEventListener('click', e => {
+    const btn = e.target.closest('[data-action="like"]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const id = btn.dataset.id;
+    const liked = getLikedSet();
+    if (liked.has(id)) return;
+    liked.add(id);
+    saveLikedSet(liked);
+    btn.classList.add('liked', 'pop');
+    const countEl = btn.querySelector('.like-count');
+    if (countEl) countEl.textContent = bagLikeCount(id);
+    setTimeout(() => btn.classList.remove('pop'), 350);
   });
 
   // ----- Lightbox -----

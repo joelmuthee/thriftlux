@@ -993,6 +993,44 @@ img { max-width: 100%; display: block; }
 /* If both SOLD and NEW exist (shouldn't, but safe), SOLD wins visually */
 .card.sold .badge-new { display: none; }
 
+/* Like pill — top-right of card, tap to +1 (one-way, persists in localStorage) */
+.like-pill {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px 5px 8px;
+  background: rgba(13,13,13,0.55);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.18s, transform 0.18s;
+  z-index: 2;
+}
+.like-pill:hover { background: rgba(13,13,13,0.75); transform: translateY(-1px); }
+.like-pill svg { fill: none; stroke: #fff; stroke-width: 2; transition: fill 0.2s, stroke 0.2s; }
+.like-pill.liked { background: rgba(225,29,72,0.92); cursor: default; }
+.like-pill.liked:hover { transform: none; }
+.like-pill.liked svg { fill: #fff; stroke: #fff; }
+.like-pill.pop { animation: like-pop 0.35s cubic-bezier(0.22,0.61,0.36,1); }
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+@media (max-width: 600px) {
+  .like-pill { top: 10px; right: 10px; padding: 4px 8px 4px 7px; font-size: 11.5px; }
+  .like-pill svg { width: 13px; height: 13px; }
+}
+
 /* Admin Insights section ("(This device only)" badge) */
 .insights-badge {
   display: inline-block;

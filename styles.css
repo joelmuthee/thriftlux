@@ -56,23 +56,18 @@ img { max-width: 100%; display: block; }
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
   color: #fff;
+  transition: transform 0.2s;
 }
+.brand:hover .brand-logo { transform: scale(1.04); }
 .brand-logo {
-  width: 52px; height: 52px; border-radius: 10px;
+  width: 56px; height: 56px; border-radius: 10px;
   border: 1px solid rgba(201,169,97,0.3);
   object-fit: cover;
   background: #000;
+  transition: transform 0.2s;
 }
 .footer-brand .brand-logo { width: 60px; height: 60px; }
-.brand-text {
-  font-family: var(--serif);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--gold-light);
-}
 .nav-links {
   display: flex; gap: 32px; align-items: center;
 }
@@ -518,8 +513,7 @@ img { max-width: 100%; display: block; }
 /* ===== MOBILE POLISH ===== */
 @media (max-width: 760px) {
   .nav-inner { padding: 10px 0; }
-  .brand-logo { width: 44px; height: 44px; }
-  .brand-text { font-size: 19px; }
+  .brand-logo { width: 46px; height: 46px; }
 
   .hero { padding: 56px 16px 64px; }
   .hero-eyebrow { font-size: 11px; letter-spacing: 0.25em; margin-bottom: 18px; }
@@ -566,7 +560,6 @@ img { max-width: 100%; display: block; }
   .hero-title { font-size: 38px; }
   .hero-cta { flex-direction: column; }
   .hero-cta .btn { width: 100%; }
-  .brand-text { font-size: 17px; }
 }
 
 /* ==========================================================

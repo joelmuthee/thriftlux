@@ -51,7 +51,7 @@ img { max-width: 100%; display: block; }
   justify-content: space-between;
   width: min(1200px, 92%);
   margin: 0 auto;
-  padding: 14px 0;
+  padding: 6px 0;             /* tightened from 14px so the logo can grow without the header growing */
 }
 .brand {
   display: flex;
@@ -61,13 +61,11 @@ img { max-width: 100%; display: block; }
 }
 .brand:hover .brand-logo { transform: scale(1.04); }
 .brand-logo {
-  width: 56px; height: 56px; border-radius: 10px;
-  border: 1px solid rgba(201,169,97,0.3);
-  object-fit: cover;
-  background: #000;
+  height: 72px; width: auto;  /* bigger + more prominent; pill frame removed */
+  object-fit: contain;
   transition: transform 0.2s;
 }
-.footer-brand .brand-logo { width: 60px; height: 60px; }
+.footer-brand .brand-logo { height: 72px; }
 .nav-links {
   display: flex; gap: 32px; align-items: center;
 }
@@ -512,8 +510,8 @@ img { max-width: 100%; display: block; }
 
 /* ===== MOBILE POLISH ===== */
 @media (max-width: 760px) {
-  .nav-inner { padding: 10px 0; }
-  .brand-logo { width: 46px; height: 46px; }
+  .nav-inner { padding: 6px 0; }
+  .brand-logo { height: 56px; width: auto; }
 
   .hero { padding: 56px 16px 64px; }
   .hero-eyebrow { font-size: 11px; letter-spacing: 0.25em; margin-bottom: 18px; }
@@ -546,7 +544,7 @@ img { max-width: 100%; display: block; }
 
   .footer { padding: 40px 0 24px; }
   .footer-inner { gap: 26px; }
-  .footer-brand .brand-logo { width: 50px; height: 50px; }
+  .footer-brand .brand-logo { height: 60px; width: auto; }
   .footer-fine { padding-top: 24px; margin-top: 12px; }
 
   .lightbox { padding: 16px; }
